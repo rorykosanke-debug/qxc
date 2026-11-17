@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>开奖号码</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #f2f3f5;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: #1f2328; padding-bottom: 90px;
+  }
+  :root { --red: #d92b2b; --line: #ececec; --tint: #fff2f2; --tint2: #fdf6f6; }
+
+  header { position: sticky; top: 0; z-index: 20; background: #fff; box-shadow: 0 1px 0 #e8e8e8; padding-top: env(safe-area-inset-top); }
+  .head-top { display: flex; align-items: center; gap: 8px; padding: 12px 16px 8px; }
+  .head-top h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: .5px; flex: 1; }
+  .refresh { border: 0; background: #f1f3f4; color: #5f6368; font-size: 12px; padding: 7px 12px; border-radius: 999px; font-family: inherit; }
+  .refresh:active { background: #e6e8ea; }
+
+  .tabs { display: flex; gap: 10px; padding: 0 16px 10px; }
+  .tabs button { flex: 1; padding: 10px 0; border: 0; border-radius: 12px; background: #f1f3f4; color: #5f6368; font-size: 15px; font-weight: 700; letter-spacing: .5px; }
+  .tabs button.on { background: var(--red); color: #fff; box-shadow: 0 4px 12px rgba(217,43,43,.28); }
+
+  .status { padding: 0 16px 8px; font-size: 11px; color: #9aa0a6; }
+  .status.err { color: #e5484d; }
+
+  main { max-width: 520px; margin: 0 auto; padding: 12px 12px 0; }
+
+  .latest { background: #fff; border-radius: 16px; padding: 12px 12px 14px; box-shadow: 0 2px 10px rgba(0,0,0,.05); margin-bottom: 14px; }
+  .latest-head { display: flex; align-items: baseline; justify-content: space-between; padding: 0 2px 10px; }
+  .latest-head b { font-size: 14px; font-weight: 800; color: var(--red); }
+  .latest-head i { font-style: normal; font-size: 12px; color: #9aa0a6; }
+  .latest .nums { display: flex; gap: 6px; }
+  .latest .c { flex: 1; text-align: center; font-size: 34px; font-weight: 900; color: var(--red); font-variant-numeric: tabular-nums; background: var(--tint); border-radius: 10px; padding: 8px 0 10px; line-height: 1.1; }
+  .latest .c.special { background: #ffe6e6; }
+
+  .list-title { display: flex; justify-content: space-between; align-items: baseline; padding: 2px 6px 8px; font-size: 12px; color: #9aa0a6; }
+  .table { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
+
+  .row { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row:nth-child(even) { background: var(--tint2); }
+
+  .meta { flex: 0 0 58px; width: 58px; padding: 8px 0 8px 10px; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+  .meta b { font-size: 11px; color: #5f6368; font-weight: 700; }
+  .meta i { font-style: normal; font-size: 10px; color: #b0b4b9; }
+
+  .nums { flex: 1; display: flex; min-width: 0; }
+  .c { flex: 1; text-align: center; font-size: 27px; font-weight: 800; color: var(--red); font-variant-numeric: tabular-nums; padding: 10px 0; border-left: 1px solid var(--line); line-height: 1.1; }
+  .c.special { background: var(--tint); }
+  .c.sep { border-left: 2px solid #dedede; }
+
+  .del { flex: 0 0 34px; width: 34px; border: 0; background: transparent; color: #d0d4d8; font-size: 12px; }
+  .del.armed { color: #fff; background: #e5484d; font-size: 10px; }
+
+  .empty { text-align: center; padding: 48px 0; color: #b0b4b9; font-size: 13px; }
+
+  .fab { position: fixed; right: 18px; bottom: calc(22px + env(safe-area-inset-bottom)); width: 54px; height: 54px; border: 0; border-radius: 50%; background: var(--red); color: #fff; font-size: 30px; font-weight: 300; line-height: 1; padding-bottom: 4px; box-shadow: 0 8px 20px rgba(217,43,43,.4); z-index: 30; }
+
+  .sheet-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; background: #fff; border-radius: 20px 20px 0 0; padding: 10px 16px calc(18px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto; max-height: 88vh; overflow-y: auto; }
+  .sheet .bar { width: 40px; height: 4px; background: #e0e0e0; border-radius: 2px; margin: 0 auto 12px; }
+  .sheet h3 { margin: 0 0 12px; font-size: 15px; font-weight: 800; }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 11px; color: #9aa0a6; margin-bottom: 5px; }
+  .field input { width: 100%; padding: 11px 12px; border: 0; border-radius: 12px; background: #f2f3f5; font-size: 15px; color: #1f2328; outline: none; font-family: inherit; }
+  .row2 { display: flex; gap: 10px; }
+  .row2 > * { flex: 1; }
+  .preview { display: flex; gap: 5px; margin: 4px 0 12px; min-height: 42px; }
+  .preview .p { flex: 1; text-align: center; padding: 8px 0; border-radius: 8px; background: #f2f3f5; font-size: 20px; font-weight: 800; color: #d92b2b; }
+  .preview .p.empty { color: #cdd1d5; }
+  .btn-main { width: 100%; padding: 14px; border: 0; border-radius: 14px; background: var(--red); color: #fff; font-size: 15px; font-weight: 700; }
+  .btn-ghost { width: 100%; padding: 12px; border: 0; border-radius: 14px; background: #f1f3f4; color: #5f6368; font-size: 14px; margin-top: 8px; }
+  .msg { font-size: 12px; color: #e5484d; min-height: 16px; margin-top: 8px; text-align: center; }
+  .hint { font-size: 11px; color: #9aa0a6; text-align: center; margin-top: 6px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-top">
+    <h1>开奖号码</h1>
+    <button class="refresh" id="refreshBtn">刷新</button>
+  </div>
+  <div class="tabs">
+    <button data-game="qxc" class="on">七星彩</button>
+    <button data-game="pl5">排列五</button>
+  </div>
+  <div class="status" id="status">准备更新…</div>
+</header>
+
+<main>
+  <section id="latest"></section>
+  <div class="list-title">
+    <span>历史开奖</span>
+    <span id="count"></span>
+  </div>
+  <div class="table" id="table"></div>
+</main>
+
+<button class="fab" id="addBtn">＋</button>
+
+<div id="mask" class="sheet-mask hidden"></div>
+<div id="sheet" class="sheet hidden">
+  <div class="bar"></div>
+  <h3 id="sheetTitle">记一期开奖</h3>
+  <div class="row2">
+    <div class="field">
+      <label>期号</label>
+      <input id="issueInput" inputmode="numeric" placeholder="例如 26138">
+    </div>
+    <div class="field">
+      <label>日期</label>
+      <input id="dateInput" type="date">
+    </div>
+  </div>
+  <div class="field">
+    <label id="numsLabel">开奖号码</label>
+    <input id="numsInput" inputmode="numeric" placeholder="1384159 或 1 3 8 4 1 5 9">
+  </div>
+  <div class="preview" id="preview"></div>
+  <button class="btn-main" id="saveBtn">保存</button>
+  <button class="btn-ghost" id="cancelBtn">取消</button>
+  <div class="msg" id="msg"></div>
+  <div class="hint" id="hint"></div>
+</div>
+
+<script>
+/* ========= 数据源：改成你自己的仓库地址 ========= */
+const DATA_URLS = [
+  './data.json',
+  'https://raw.githubusercontent.com/USER/REPO/main/data.json'
+];
+
+const GAMES = {
+  qxc: { name: '七星彩', count: 7, split: 4, label: '前 6 位 0-9，第 7 位 0-14', max: i => (i === 6 ? 14 : 9) },
+  pl5: { name: '排列五', count: 5, split: 0, label: '5 位数字，每位 0-9', max: () => 9 }
+};
+
+const STORE = 'lottery_data_v1';
+const T_STORE = 'lottery_updated_v1';
+let game = 'qxc';
+let db = { qxc: [], pl5: [] };
+let armedDel = null;
+let loading = false;
+
+/* ========= 读写 ========= */
+function load() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORE));
+    if (raw && raw.qxc && raw.pl5) db = raw;
+  } catch (e) {}
+  if (!db.qxc.length && !db.pl5.length) seed();
+}
+function save() { try { localStorage.setItem(STORE, JSON.stringify(db)); } catch (e) {} }
+
+function seed() {
+  db.qxc = [
+    { issue: '26137', date: '2026-11-18', nums: [1,3,8,4,1,5,9] },
+    { issue: '26136', date: '2026-11-16', nums: [6,3,9,3,7,3,3] },
+    { issue: '26135', date: '2026-11-14', nums: [8,7,1,5,7,0,6] },
+    { issue: '26134', date: '2026-11-12', nums: [7,7,5,5,1,3,11] }
+  ];
+  db.pl5 = [
+    { issue: '26137', date: '2026-11-18', nums: [2,9,4,5,6] },
+    { issue: '26136', date: '2026-11-17', nums: [3,3,3,4,1] }
+  ];
+  save();
+}
+
+const listOf = g => (db[g] || []).slice().sort((a, b) => Number(b.issue) - Number(a.issue));
+
+/* ========= 联网更新 ========= */
+async function pullRemote() {
+  if (loading) return;
+  loading = true;
+  setStatus('正在更新…');
+
+  for (const url of DATA_URLS) {
+    if (url.indexOf('USER/REPO') >= 0) continue;
+    try {
+      const res = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (!data || (!data.qxc && !data.pl5)) continue;
+
+      ['qxc', 'pl5'].forEach(k => {
+        const incoming = (data[k] || []).filter(x => x && x.issue && Array.isArray(x.nums));
+        if (!incoming.length) return;
+        const map = new Map();
+        db[k].forEach(x => map.set(x.issue, x));
+        incoming.forEach(x => map.set(x.issue, x));
+        db[k] = [...map.values()].sort((a, b) => Number(b.issue) - Number(a.issue)).slice(0, 80);
+      });
+
+      save();
+      const t = new Date();
+      localStorage.setItem(T_STORE, t.toISOString());
+      render();
+      setStatus('数据更新于 ' + fmtTime(t) + ' · 点右上角可刷新');
+      loading = false;
+      return;
+    } catch (e) {
+      /* 换下一个地址 */
+    }
+  }
+
+  loading = false;
+  const t = localStorage.getItem(T_STORE);
+  setStatus(t ? '离线模式 · 上次更新 ' + fmtTime(new Date(t)) : '暂时连不上数据源，可先手动录入', true);
+}
+
+function fmtTime(d) {
+  const p = n => String(n).padStart(2, '0');
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function setStatus(txt, isErr) {
+  const el = document.getElementById('status');
+  el.textContent = txt;
+  el.className = 'status' + (isErr ? ' err' : '');
+}
+
+/* ========= 渲染 ========= */
+function numCells(nums, g) {
+  const cfg = GAMES[g];
+  return nums.map((n, i) => {
+    const cls = ['c'];
+    if (i === cfg.count - 1) cls.push('special');
+    if (cfg.split && i === cfg.split) cls.push('sep');
+    return `<div class="${cls.join(' ')}">${n}</div>`;
+  }).join('');
+}
+
+function render() {
+  const cfg = GAMES[game];
+  const list = listOf(game);
+
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.game === game));
+  document.getElementById('numsLabel').textContent = cfg.label;
+  document.getElementById('hint').textContent = cfg.label;
+
+  const latestEl = document.getElementById('latest');
+  latestEl.innerHTML = list.length ? `
+    <div class="latest">
+      <div class="latest-head"><b>第 ${list[0].issue} 期</b><i>${list[0].date || ''}</i></div>
+      <div class="nums">${numCells(list[0].nums, game)}</div>
+    </div>` : '';
+
+  const table = document.getElementById('table');
+  document.getElementById('count').textContent = list.length ? `共 ${list.length} 期` : '';
+
+  if (!list.length) {
+    table.innerHTML = `<div class="empty">还没有数据，点右下角 ＋ 记一期</div>`;
+    return;
+  }
+
+  table.innerHTML = list.map(it => `
+    <div class="row">
+      <div class="meta"><b>${it.issue}</b><i>${shortDate(it.date)}</i></div>
+      <div class="nums">${numCells(it.nums, game)}</div>
+      <button class="del ${armedDel && armedDel.issue === it.issue ? 'armed' : ''}" data-issue="${it.issue}">
+        ${armedDel && armedDel.issue === it.issue ? '删?' : '✕'}
+      </button>
+    </div>`).join('');
+}
+
+function shortDate(d) {
+  if (!d) return '';
+  const p = d.split('-');
+  return p.length === 3 ? `${+p[1]}-${p[2]}` : d;
+}
+
+/* ========= 删除（两次点击） ========= */
+document.getElementById('table').addEventListener('click', e => {
+  const btn = e.target.closest('.del');
+  if (!btn) return;
+  const issue = btn.dataset.issue;
+
+  if (!armedDel || armedDel.issue !== issue) {
+    armedDel = { issue };
+    render();
+    setTimeout(() => { if (armedDel && armedDel.issue === issue) { armedDel = null; render(); } }, 3000);
+    return;
+  }
+  armedDel = null;
+  db[game] = db[game].filter(x => x.issue !== issue);
+  save(); render();
+});
+
+/* ========= 切换 ========= */
+document.querySelectorAll('.tabs button').forEach(b => {
+  b.addEventListener('click', () => { game = b.dataset.game; armedDel = null; render(); });
+});
+
+/* ========= 录入 ========= */
+const mask = document.getElementById('mask');
+const sheet = document.getElementById('sheet');
+const issueInput = document.getElementById('issueInput');
+const dateInput = document.getElementById('dateInput');
+const numsInput = document.getElementById('numsInput');
+const preview = document.getElementById('preview');
+const msg = document.getElementById('msg');
+
+const today = () => {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+function nextIssue() {
+  const list = listOf(game);
+  if (!list.length) return '';
+  const n = Number(list[0].issue);
+  return isFinite(n) ? String(n + 1) : '';
+}
+
+function openSheet() {
+  msg.textContent = '';
+  numsInput.value = '';
+  issueInput.value = nextIssue();
+  dateInput.value = today();
+  document.getElementById('sheetTitle').textContent = '记一期 · ' + GAMES[game].name;
+  renderPreview();
+  mask.classList.remove('hidden');
+  sheet.classList.remove('hidden');
+  setTimeout(() => numsInput.focus(), 150);
+}
+
+function closeSheet() {
+  mask.classList.add('hidden');
+  sheet.classList.add('hidden');
+}
+
+function parseNums(str) {
+  const cfg = GAMES[game];
+  const s = String(str).trim();
+  if (!s) return null;
+
+  const tokens = s.split(/[\s,，、|]+/).filter(Boolean);
+  let arr = null;
+
+  if (tokens.length === cfg.count) {
+    arr = tokens;
+  } else if (tokens.length === 1 && /^\d+$/.test(tokens[0])) {
+    const t = tokens[0];
+    if (t.length === cfg.count) arr = t.split('');
+    else if (game === 'qxc' && t.length === cfg.count + 1) arr = t.slice(0, cfg.count - 1).split('').concat([t.slice(cfg.count - 1)]);
+  }
+  if (!arr) return null;
+
+  const nums = arr.map(x => parseInt(x, 10));
+  if (nums.some(n => !isFinite(n))) return null;
+  for (let i = 0; i < nums.length; i++) {
+    if (nums[i] < 0 || nums[i] > cfg.max(i)) return { error: `第 ${i + 1} 位应在 0-${cfg.max(i)} 之间` };
+  }
+  return { nums };
+}
+
+function renderPreview() {
+  const cfg = GAMES[game];
+  const r = parseNums(numsInput.value);
+  const nums = r && r.nums ? r.nums : null;
+  let html = '';
+  for (let i = 0; i < cfg.count; i++) {
+    html += `<div class="p ${nums ? '' : 'empty'}">${nums && nums[i] != null ? nums[i] : '·'}</div>`;
+  }
+  preview.innerHTML = html;
+  msg.textContent = r && r.error ? r.error : '';
+}
+
+numsInput.addEventListener('input', renderPreview);
+document.getElementById('addBtn').addEventListener('click', openSheet);
+document.getElementById('cancelBtn').addEventListener('click', closeSheet);
+mask.addEventListener('click', closeSheet);
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const cfg = GAMES[game];
+  const r = parseNums(numsInput.value);
+  if (!r) { msg.textContent = `请填写 ${cfg.count} 位号码`; return; }
+  if (r.error) { msg.textContent = r.error; return; }
+
+  const issue = issueInput.value.trim() || nextIssue();
+  if (!issue) { msg.textContent = '请填写期号'; return; }
+  if (db[game].some(x => x.issue === issue)) { msg.textContent = `第 ${issue} 期已存在`; return; }
+
+  db[game].push({ issue, date: dateInput.value || today(), nums: r.nums });
+  save(); closeSheet(); render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+document.getElementById('refreshBtn').addEventListener('click', pullRemote);
+
+/* ========= 启动 ========= */
+load();
+render();
+pullRemote();
+</script>
+</body>
+</html>
