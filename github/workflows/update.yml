@@ -1,34 +1,37 @@
-name: update-lottery
+name: 更新数据
 
 on:
   schedule:
-    - cron: '15,45 12-14 * * *'
-  workflow_dispatch:
+    # 每天北京时间 21:40 跑一次（UTC 13:40）
+    - cron: '40 13 * * *'
+  workflow_dispatch:        # 手动触发按钮
 
 permissions:
-  contents: write
+  contents: write           # 关键：允许提交回仓库
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: 拉取代码
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: 安装 Node
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 抓取开奖数据
+      - name: 运行抓取脚本
         run: node fetch-data.js
 
-      - name: 提交 data.json
+      - name: 提交变更
         run: |
-          git config user.name "actions"
-          git config user.email "actions@users.noreply.github.com"
-          git add data.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
           if git diff --cached --quiet; then
-            echo "数据没有变化"
+            echo "没有数据变化，跳过提交"
           else
-            git commit -m "update lottery data"
+            git commit -m "自动更新数据 $(date '+%Y-%m-%d %H:%M')"
             git push
           fi
