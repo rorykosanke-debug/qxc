@@ -14,29 +14,59 @@
   :root{
     --ball-bg:#fff1f2;
     --ball-fg:#e11d48;
-    --ball-bg-sm:#fff5f6;
-    --ball-fg-sm:#f43f5e;
+    --ring-color:#e11d48;
   }
 
   .balls{display:flex;align-items:center;justify-content:center;gap:4px}
 
-  /* 前 4 位：大号 */
   .ball{
+    position:relative;
     flex:0 0 auto;width:13%;
     height:58px;border-radius:14px;
+    --ring-size:54px;
+
     display:flex;align-items:center;justify-content:center;
     background:var(--ball-bg);color:var(--ball-fg);
-    font-weight:800;font-size:31px;line-height:1;letter-spacing:-0.5px;
+
+    font-family:ui-rounded,"SF Pro Rounded","Segoe UI Variable","Segoe UI","PingFang SC",system-ui,sans-serif;
+    font-weight:700;font-size:30px;line-height:1;letter-spacing:0;
+    font-variant-numeric:tabular-nums;
+
     transition:background .18s ease, color .18s ease, width .16s ease, height .16s ease, font-size .16s ease;
+    touch-action:manipulation;
   }
-  /* 第 5 位起：小号 */
   .ball.xs{
     width:6.6%;height:42px;border-radius:9px;
-    font-size:15px;letter-spacing:0;
+    --ring-size:38px;
+    font-size:14px;
   }
-  /* 4位模式：比普通大一号，但不至于撑高行 */
   .ball.zoom{
-    width:19%;height:64px;border-radius:15px;font-size:36px;
+    width:19%;height:64px;border-radius:15px;
+    --ring-size:60px;
+    font-size:34px;
+  }
+
+  /* 正圆标记 */
+  .ball.circled::after{
+    content:'';
+    position:absolute;
+    left:50%;top:50%;
+    width:var(--ring-size);height:var(--ring-size);
+    margin:calc(var(--ring-size) / -2) 0 0 calc(var(--ring-size) / -2);
+    border:2.5px solid var(--ring-color);
+    border-radius:50%;
+    pointer-events:none;
+  }
+  .ball.dragging{filter:brightness(.96)}
+  .ball.dragging::before{
+    content:'';
+    position:absolute;left:50%;top:50%;
+    width:var(--ring-size);height:var(--ring-size);
+    margin:calc(var(--ring-size) / -2) 0 0 calc(var(--ring-size) / -2);
+    border:2px dashed var(--ring-color);
+    border-radius:50%;
+    opacity:.55;
+    pointer-events:none;
   }
 
   .caret{
@@ -75,10 +105,13 @@
       <div class="flex items-center justify-between gap-2">
         <h1 class="text-[22px] font-extrabold tracking-tight">开奖号码</h1>
         <div class="flex items-center gap-1.5">
-          <button id="btnColor" class="w-9 h-9 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="切换数字颜色">
-            <span id="colorDot" class="w-4 h-4 rounded-full transition-colors" style="background:#e11d48"></span>
+          <button id="btnColor" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="数字颜色">
+            <span id="colorDot" class="w-4 h-4 rounded-full" style="background:#e11d48"></span>
           </button>
-          <button id="btnTail" class="h-9 px-3 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm active:scale-95 transition">
+          <button id="btnRing" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="圆圈颜色">
+            <span id="ringDot" class="w-4 h-4 rounded-full" style="border:2.5px solid #e11d48"></span>
+          </button>
+          <button id="btnTail" class="h-8 px-3 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm active:scale-95 transition">
             <span id="tailLabel">7位</span>
           </button>
           <button id="btnFold" class="fold" aria-label="收起">⌃</button>
@@ -95,8 +128,11 @@
     </div>
 
     <div id="foldBar" class="hidden items-center justify-end gap-1.5 py-1">
-      <button id="btnColor2" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="切换数字颜色">
+      <button id="btnColor2" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="数字颜色">
         <span id="colorDot2" class="w-3.5 h-3.5 rounded-full" style="background:#e11d48"></span>
+      </button>
+      <button id="btnRing2" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="圆圈颜色">
+        <span id="ringDot2" class="w-3.5 h-3.5 rounded-full" style="border:2px solid #e11d48"></span>
       </button>
       <button id="btnTail2" class="h-8 px-2.5 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm active:scale-95 transition">
         <span id="tailLabel2">7位</span>
@@ -108,8 +144,8 @@
   <main id="main" class="px-4"></main>
 
   <p class="px-5 mt-4 mb-4 text-[11px] leading-relaxed text-slate-400">
-    数据每天 21:00 · 21:50 · 22:00 · 22:40 自动更新（北京时间）。<br>
-    点历史列表中任意绿色箭头，可整体展开期号与开奖日期。
+    数据每天 21:00 · 21:30 · 21:50 · 22:00 · 22:40 自动更新（北京时间）。<br>
+    点数字出圆圈；长按数字拖到另一个数字上可连线。
   </p>
 </div>
 
@@ -121,15 +157,27 @@ const LENS  = { qxc: 7, pl5: 5 };
 const BIG_N = 4;
 const REMOTE_DATA = 'https://rorykosanke-debug.github.io/qxc/data.json';
 const LS_COLOR = 'lottery_color_idx';
+const LS_RING  = 'lottery_ring_idx';
 const LS_TAIL  = 'lottery_hide_tail';
 
 const PALETTES = [
-  { name:'玫红', bg:'#fff1f2', fg:'#e11d48', bgSm:'#fff5f6', fgSm:'#f43f5e', dot:'#e11d48' },
-  { name:'蓝色', bg:'#eff6ff', fg:'#2563eb', bgSm:'#f5f9ff', fgSm:'#3b82f6', dot:'#2563eb' },
-  { name:'绿色', bg:'#ecfdf5', fg:'#059669', bgSm:'#f3fdf9', fgSm:'#10b981', dot:'#059669' },
-  { name:'紫色', bg:'#f5f3ff', fg:'#7c3aed', bgSm:'#f8f6ff', fgSm:'#8b5cf6', dot:'#7c3aed' },
-  { name:'橙色', bg:'#fff7ed', fg:'#ea580c', bgSm:'#fffaf3', fgSm:'#f97316', dot:'#ea580c' },
-  { name:'金棕', bg:'#fffbeb', fg:'#b45309', bgSm:'#fffdf5', fgSm:'#d97706', dot:'#b45309' }
+  { name:'玫红', bg:'#fff1f2', fg:'#e11d48', dot:'#e11d48' },
+  { name:'蓝色', bg:'#eff6ff', fg:'#2563eb', dot:'#2563eb' },
+  { name:'绿色', bg:'#ecfdf5', fg:'#059669', dot:'#059669' },
+  { name:'紫色', bg:'#f5f3ff', fg:'#7c3aed', dot:'#7c3aed' },
+  { name:'橙色', bg:'#fff7ed', fg:'#ea580c', dot:'#ea580c' },
+  { name:'金棕', bg:'#fffbeb', fg:'#b45309', dot:'#b45309' }
+];
+
+const RING_COLORS = [
+  { name:'玫红', c:'#e11d48' },
+  { name:'蓝',   c:'#2563eb' },
+  { name:'绿',   c:'#059669' },
+  { name:'紫',   c:'#7c3aed' },
+  { name:'橙',   c:'#ea580c' },
+  { name:'金',   c:'#d97706' },
+  { name:'黑',   c:'#111827' },
+  { name:'灰',   c:'#64748b' }
 ];
 
 const TAB_ON  = 'tab h-12 rounded-2xl font-bold text-base bg-rose-600 text-white shadow-lg shadow-rose-600/25 active:scale-[.98] transition';
@@ -143,20 +191,27 @@ const STATE = {
   folded: false,
   expandAll: false,
   hideTail: false,
-  colorIdx: 0
+  colorIdx: 0,
+  ringIdx: -1,          // -1 表示跟随数字颜色
+  circled: new Set(),
+  links: []
 };
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-function ballsHtml(codes, mode) {
+/* ---------- 号码球 ---------- */
+function ballsHtml(it, mode) {
+  const codes = it.codes;
   const shown = STATE.hideTail ? codes.slice(0, BIG_N) : codes;
   const wrap = mode === 'list' ? 'balls list' : 'balls';
   const inner = shown.map((c, i) => {
     let cls = 'ball';
     if (STATE.hideTail) cls += ' zoom';
     else if (i >= BIG_N) cls += ' xs';
-    return `<div class="${cls}">${esc(c)}</div>`;
+    const key = it.issue + ':' + i;
+    if (STATE.circled.has(key)) cls += ' circled';
+    return `<div class="${cls}" data-cell="${esc(key)}">${esc(c)}</div>`;
   }).join('');
   return `<div class="${wrap}">${inner}</div>`;
 }
@@ -167,21 +222,45 @@ function applyPalette(idx) {
   const root = document.documentElement.style;
   root.setProperty('--ball-bg', p.bg);
   root.setProperty('--ball-fg', p.fg);
-  root.setProperty('--ball-bg-sm', p.bgSm);
-  root.setProperty('--ball-fg-sm', p.fgSm);
   const d1 = $('colorDot'), d2 = $('colorDot2');
   if (d1) d1.style.background = p.dot;
   if (d2) d2.style.background = p.dot;
   try { localStorage.setItem(LS_COLOR, String(idx % PALETTES.length)); } catch (e) {}
+  applyRing();
 }
-function loadPalette() {
-  let idx = 0;
+
+function ringColor() {
+  if (STATE.ringIdx >= 0) return RING_COLORS[STATE.ringIdx % RING_COLORS.length].c;
+  return PALETTES[STATE.colorIdx % PALETTES.length].fg;   // 未指定时跟随数字颜色
+}
+
+function applyRing() {
+  const c = ringColor();
+  document.documentElement.style.setProperty('--ring-color', c);
+  const r1 = $('ringDot'), r2 = $('ringDot2');
+  if (r1) r1.style.borderColor = c;
+  if (r2) r2.style.borderColor = c;
+  drawLinks();
+}
+
+function loadColors() {
+  let ci = 0, ri = -1;
   try {
     const v = parseInt(localStorage.getItem(LS_COLOR) || '0', 10);
-    if (!isNaN(v)) idx = v;
+    if (!isNaN(v)) ci = v;
+    const r = localStorage.getItem(LS_RING);
+    if (r !== null && r !== '') ri = parseInt(r, 10);
   } catch (e) {}
-  STATE.colorIdx = idx % PALETTES.length;
+  STATE.colorIdx = ci % PALETTES.length;
+  STATE.ringIdx = (ri === undefined || isNaN(ri)) ? -1 : (ri < 0 ? -1 : ri % RING_COLORS.length);
   applyPalette(STATE.colorIdx);
+}
+
+function nextRing() {
+  STATE.ringIdx = (STATE.ringIdx + 1) % RING_COLORS.length;
+  try { localStorage.setItem(LS_RING, String(STATE.ringIdx)); } catch (e) {}
+  applyRing();
+  toast('圆圈颜色：' + RING_COLORS[STATE.ringIdx].name);
 }
 
 function loadTail() {
@@ -220,7 +299,175 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.add('hidden'), 1600);
 }
 
-/* ---------- 历史行：零内边距，尽量多显示期数 ---------- */
+/* ---------- 连线层 ---------- */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+let dragFrom = null, dragX = 0, dragY = 0;
+
+function layer() {
+  let s = document.getElementById('linkLayer');
+  if (!s) {
+    s = document.createElementNS(SVG_NS, 'svg');
+    s.id = 'linkLayer';
+    s.style.cssText = 'position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:5;overflow:visible';
+    document.body.appendChild(s);
+  }
+  return s;
+}
+
+function cellEl(key) {
+  return document.querySelector(`[data-cell="${key}"]`);
+}
+
+function centerDoc(el) {
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2 + window.scrollX, y: r.top + r.height / 2 + window.scrollY };
+}
+
+function drawLinks() {
+  const s = layer();
+  s.setAttribute('height', String(document.documentElement.scrollHeight));
+  while (s.firstChild) s.removeChild(s.firstChild);
+
+  const color = ringColor();
+
+  const addLine = (p1, p2, dashed) => {
+    const line = document.createElementNS(SVG_NS, 'line');
+    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+    line.setAttribute('stroke', color);
+    line.setAttribute('stroke-width', '2.5');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('opacity', dashed ? '0.7' : '0.9');
+    if (dashed) line.setAttribute('stroke-dasharray', '6 5');
+    s.appendChild(line);
+  };
+
+  STATE.links.forEach(l => {
+    const a = cellEl(l.a), b = cellEl(l.b);
+    if (!a || !b) return;
+    addLine(centerDoc(a), centerDoc(b), false);
+  });
+
+  if (dragFrom) {
+    const a = cellEl(dragFrom);
+    if (a) addLine(centerDoc(a), { x: dragX, y: dragY }, true);
+  }
+}
+
+/* ---------- 点击加圈 / 长按连线 ---------- */
+const press = { key: null, x0: 0, y0: 0, moved: false, dragging: false, timer: null };
+
+function pressStart(key, x, y) {
+  pressReset();
+  press.key = key; press.x0 = x; press.y0 = y;
+  press.moved = false; press.dragging = false;
+  press.timer = setTimeout(() => {
+    if (!press.key) return;
+    press.dragging = true;
+    dragFrom = press.key;
+    dragX = press.x0 + window.scrollX;
+    dragY = press.y0 + window.scrollY;
+    const el = cellEl(press.key);
+    if (el) el.classList.add('dragging');
+    if (navigator.vibrate) navigator.vibrate(12);
+    drawLinks();
+  }, 300);
+}
+
+function pressMove(x, y) {
+  if (!press.key) return false;
+  const dx = x - press.x0, dy = y - press.y0;
+  if (Math.sqrt(dx * dx + dy * dy) > 8) press.moved = true;
+
+  if (!press.dragging) {
+    if (press.moved) pressReset();
+    return false;
+  }
+  dragX = x + window.scrollX;
+  dragY = y + window.scrollY;
+  drawLinks();
+  return true;
+}
+
+function pressEnd(x, y) {
+  const wasDragging = press.dragging;
+  const from = press.key;
+  clearTimeout(press.timer);
+
+  if (wasDragging && from) {
+    const el = document.elementFromPoint(x, y);
+    const target = el && el.closest ? el.closest('[data-cell]') : null;
+    const toKey = target ? target.dataset.cell : null;
+    const srcEl = cellEl(from);
+    if (srcEl) srcEl.classList.remove('dragging');
+
+    if (toKey && toKey !== from) {
+      const exists = STATE.links.some(l =>
+        (l.a === from && l.b === toKey) || (l.a === toKey && l.b === from));
+      if (!exists) {
+        STATE.links.push({ a: from, b: toKey });
+        toast('已连线，共 ' + STATE.links.length + ' 条');
+      }
+    }
+  } else if (from && !press.moved) {
+    if (STATE.circled.has(from)) STATE.circled.delete(from);
+    else STATE.circled.add(from);
+    render();
+  }
+
+  dragFrom = null;
+  pressReset();
+  drawLinks();
+}
+
+function pressReset() {
+  clearTimeout(press.timer);
+  press.key = null;
+  press.moved = false;
+  press.dragging = false;
+}
+
+function keyAtEvent(e) {
+  const el = e.target;
+  return el && el.closest ? (el.closest('[data-cell]') || null) : null;
+}
+
+document.addEventListener('touchstart', e => {
+  const cell = keyAtEvent(e);
+  if (!cell) return;
+  const t = e.touches[0];
+  pressStart(cell.dataset.cell, t.clientX, t.clientY);
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+  if (!press.key) return;
+  const t = e.touches[0];
+  if (pressMove(t.clientX, t.clientY) && e.cancelable) e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('touchend', e => {
+  if (!press.key) return;
+  const t = e.changedTouches[0];
+  pressEnd(t.clientX, t.clientY);
+}, { passive: true });
+
+document.addEventListener('touchcancel', () => {
+  dragFrom = null;
+  pressReset();
+  drawLinks();
+}, { passive: true });
+
+document.addEventListener('mousedown', e => {
+  const cell = keyAtEvent(e);
+  if (!cell) return;
+  pressStart(cell.dataset.cell, e.clientX, e.clientY);
+});
+document.addEventListener('mousemove', e => { if (press.key) pressMove(e.clientX, e.clientY); });
+document.addEventListener('mouseup', e => { if (press.key) pressEnd(e.clientX, e.clientY); });
+
+window.addEventListener('resize', () => drawLinks());
+
+/* ---------- 历史行 ---------- */
 function rowHtml(it) {
   const open = STATE.expandAll;
   const info = open
@@ -234,7 +481,7 @@ function rowHtml(it) {
     <button data-toggle="1" class="caret absolute left-1 top-1/2 -translate-y-1/2 ${open ? 'open' : ''}" aria-label="展开或收起全部">›</button>
     <div class="px-4">
       ${info}
-      ${ballsHtml(it.codes, 'list')}
+      ${ballsHtml(it, 'list')}
     </div>
   </div>`;
 }
@@ -285,13 +532,21 @@ function render() {
   const latest = list[0];
   const rest = list.slice(1);
 
+  const rows = [];
+  rest.forEach((it, i) => {
+    rows.push(rowHtml(it));
+    if ((i + 1) % 4 === 0 && i !== rest.length - 1) {
+      rows.push('<div class="h-[3px] bg-slate-300/80"></div>');
+    }
+  });
+
   main.innerHTML = `
   <section class="bg-white rounded-3xl px-3 py-2.5 shadow-sm">
     <div class="flex items-center justify-between">
       <span class="text-[11px] text-slate-400">最新一期</span>
       <button id="btnCopy" class="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-medium active:scale-95 transition">复制</button>
     </div>
-    <div class="mt-1.5">${ballsHtml(latest.codes, 'latest')}</div>
+    <div class="mt-1.5">${ballsHtml(latest, 'latest')}</div>
   </section>
 
   <section class="mt-2.5">
@@ -302,14 +557,26 @@ function render() {
          </div>`
       : ''}
     <div class="bg-white rounded-2xl overflow-hidden shadow-sm">
-      ${rest.length
-        ? rest.map(rowHtml).join('')
+      ${rows.length
+        ? rows.join('')
         : `<div class="py-10 text-center text-sm text-slate-400">暂无更多历史</div>`}
     </div>
+    ${STATE.links.length
+      ? `<button id="btnClearLinks" class="mt-2 mx-auto block text-[11px] text-slate-400 underline">清除连线（${STATE.links.length}）</button>`
+      : ''}
   </section>`;
 
   const copyBtn = $('btnCopy');
   if (copyBtn) copyBtn.onclick = () => copyLatest(latest);
+
+  const clearBtn = $('btnClearLinks');
+  if (clearBtn) clearBtn.onclick = () => {
+    STATE.links = [];
+    render();
+    toast('连线已清除');
+  };
+
+  drawLinks();
 }
 
 async function copyLatest(it) {
@@ -384,6 +651,8 @@ document.querySelectorAll('.tab').forEach(b => {
   b.onclick = () => {
     if (STATE.game === b.dataset.game) return;
     STATE.game = b.dataset.game;
+    STATE.circled.clear();
+    STATE.links = [];
     render();
   };
 });
@@ -398,12 +667,16 @@ function toggleTail() {
 $('btnTail').onclick = toggleTail;
 $('btnTail2').onclick = toggleTail;
 
-$('btnColor').onclick = () => {
+function nextColor() {
   STATE.colorIdx = (STATE.colorIdx + 1) % PALETTES.length;
   applyPalette(STATE.colorIdx);
   toast('数字颜色：' + PALETTES[STATE.colorIdx].name);
-};
-$('btnColor2').onclick = $('btnColor').onclick;
+}
+$('btnColor').onclick = nextColor;
+$('btnColor2').onclick = nextColor;
+
+$('btnRing').onclick = nextRing;
+$('btnRing2').onclick = nextRing;
 
 $('btnFold').onclick = () => { STATE.folded = true; render(); };
 $('btnFold2').onclick = () => { STATE.folded = false; render(); };
@@ -418,7 +691,7 @@ $('main').addEventListener('click', e => {
 });
 
 /* ---------- 启动 ---------- */
-loadPalette();
+loadColors();
 loadTail();
 render();
 loadRemote();
