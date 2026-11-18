@@ -24,8 +24,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 安装 Android SDK
-        uses: android-actions/setup-android@v3
+      - name: 检查自带 Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls -1 "$ANDROID_HOME" || true
 
       - name: 初始化 Capacitor 工程
         run: |
