@@ -16,6 +16,10 @@ body{
 button{font-family:inherit;border:0;outline:0;background:none;color:inherit;cursor:pointer}
 #app{position:relative;height:100%;display:flex;flex-direction:column;overflow:hidden}
 
+/* 错误提示条 */
+#errBar{position:fixed;left:0;right:0;top:0;z-index:999;display:none;background:#c0162f;color:#fff;font-size:12px;line-height:1.5;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+#errBar.show{display:block}
+
 /* ---------- 顶部 ---------- */
 #header{flex:0 0 auto;background:#f0f3f8;padding-top:env(safe-area-inset-top)}
 .topbar{display:flex;align-items:center;padding:8px 12px 4px}
@@ -87,6 +91,30 @@ body.markmode .digit{touch-action:none}
 </head>
 <body>
 
+<div id="errBar"></div>
+
+<script>
+/* 第一段脚本：抓错误，保证出错时屏幕上有提示 */
+(function(){
+  window.__booted = false;
+  window.__showErr = function(txt){
+    var b = document.getElementById('errBar');
+    if (!b) return;
+    b.textContent = '⚠ ' + txt;
+    b.className = 'show';
+  };
+  window.onerror = function(m, s, l, c, err){
+    window.__showErr('脚本错误：' + m + (l ? '（第 ' + l + ' 行）' : ''));
+    return false;
+  };
+  setTimeout(function(){
+    if (!window.__booted){
+      window.__showErr('启动超时：脚本没跑起来（多半是文件没保存完整或被截断）');
+    }
+  }, 3000);
+})();
+</script>
+
 <div id="app">
   <header id="header">
     <div class="topbar">
@@ -109,7 +137,7 @@ body.markmode .digit{touch-action:none}
       <button id="btnClear" class="chip">清除</button>
       <button id="btnHide" class="chip">隐藏</button>
     </div>
-    <div id="meta" class="meta">准备中…</div>
+    <div id="meta" class="meta">v4 · 准备中…</div>
   </header>
 
   <main id="listWrap">
@@ -137,8 +165,11 @@ body.markmode .digit{touch-action:none}
 (function(){
 'use strict';
 
+var VERSION = 'v4';
+
 /* ================= 工具 ================= */
 function $(id){ return document.getElementById(id); }
+function on(id, ev, fn){ var el = $(id); if (el) el.addEventListener(ev, fn, false); return el; }
 function pad2(n){ n = String(n); return n.length < 2 ? '0' + n : n; }
 function clock(){
   var d = new Date();
@@ -162,6 +193,11 @@ function upTo(el, cls){
   return null;
 }
 function isArr(o){ return Object.prototype.toString.call(o) === '[object Array]'; }
+function report(where, e){
+  var m = (e && e.message) ? e.message : String(e);
+  log('× ' + where + ' 出错：' + m);
+  if (window.__showErr) window.__showErr(where + '出错：' + m);
+}
 
 /* ================= 日志 ================= */
 var logLines = [];
@@ -246,7 +282,7 @@ var state = {
 function typeName(t){ return t === 'qxc' ? '七星彩' : '排列五'; }
 function wantDigits(t){ return t === 'qxc' ? 7 : 5; }
 
-/* ---- 一屏 15 期：前 4 位大，后几位小，整体靠左 ---- */
+/* ---- 一屏 15 期 ---- */
 var VISIBLE_ROWS = 15;
 function metrics(){
   var wrap = $('listWrap');
@@ -261,8 +297,8 @@ function metrics(){
 
   var bw = Math.round(dh * (five ? 1.70 : 1.48));
   var sw = Math.round(dh * 0.92);
-
   var contentW = wrapW - 16 - 12 - 24;
+
   if (!five){
     var need = bw * 4 + sw * 3 + 6 * 4;
     if (need > contentW){
@@ -289,7 +325,7 @@ function metrics(){
   };
 }
 
-/* ================= 本地存储：标记 ================= */
+/* ================= 本地存储 ================= */
 function marksKey(){ return 'qxc_marks_v2_' + state.type; }
 function loadMarks(){
   try {
@@ -304,22 +340,18 @@ function loadMarks(){
 function saveMarks(){
   try {
     localStorage.setItem(marksKey(), JSON.stringify({
-      circles: state.circles,
-      lines: state.lines,
-      lineSeq: state.lineSeq
+      circles: state.circles, lines: state.lines, lineSeq: state.lineSeq
     }));
   } catch (e) {}
 }
-
-/* ================= 本地存储：隐藏开关 ================= */
 function loadHide(){
-  try { state.hideTail = localStorage.getItem('qxc_hide_v1') === '1'; } catch (e) { state.hideTail = false; }
+  try { state.hideTail = localStorage.getItem('qxc_hide_v1') === '1'; }
+  catch (e) { state.hideTail = false; }
 }
 function saveHide(){
   try { localStorage.setItem('qxc_hide_v1', state.hideTail ? '1' : '0'); } catch (e) {}
 }
 
-/* ================= 本地存储：空白期 ================= */
 function blankMemKey(){ return 'qxc_blanks_v1'; }
 function readBlankMem(){
   try {
@@ -343,7 +375,7 @@ function updateBlanks(type, rows){
   if (!rows || !rows.length) return;
   var m = readBlankMem();
   var b = m.blanks[type];
-  if (b == null) b = state.blanks[type] == null ? 4 : state.blanks[type];
+  if (b == null) b = 4;
   var last = m.lastQ[type];
   var newest = rows[rows.length - 1].q;
   if (last && Number(newest) > Number(last)){
@@ -365,8 +397,7 @@ function updateBlanks(type, rows){
 /* ================= 渲染 ================= */
 function periodLabel(q){
   q = String(q || '');
-  if (q.length >= 7) return q.substr(4);
-  return q;
+  return q.length >= 7 ? q.substr(4) : q;
 }
 function fullDate(d){
   d = String(d || '');
@@ -380,6 +411,7 @@ function fullDate(d){
 function render(scrollNewest){
   var rows = state.data[state.type] || [];
   var box = $('rows');
+  if (!box) return;
   var wrap = $('listWrap');
   var keep = wrap ? wrap.scrollTop : 0;
   var n = rows.length;
@@ -410,10 +442,9 @@ function render(scrollNewest){
       html.push('<div class="nums">');
       for (j = 0; j < row.n.length; j++){
         isSmall = (want === 7 && j >= 4);
-        hideTail = state.hideTail && j >= 4;          /* 隐藏前 4 位之后的号码 */
+        hideTail = state.hideTail && j >= 4;
         if (hideTail){
-          st = 'width:' + m.sw + 'px;height:' + m.dh + 'px;'
-             + 'border-radius:' + Math.max(5, m.rad - 2) + 'px;';
+          st = 'width:' + m.sw + 'px;height:' + m.dh + 'px;border-radius:' + Math.max(5, m.rad - 2) + 'px;';
           html.push('<span class="digit hid" style="' + st + '"></span>');
           continue;
         }
@@ -507,9 +538,9 @@ function hideTempLine(){
 }
 
 /* ================= 圈 / 线 / 撤销 ================= */
-function setCircle(key, on){
+function setCircle(key, isOn){
   var el = digitEl(key);
-  if (!on){
+  if (!isOn){
     delete state.circles[key];
     if (el){
       el.className = el.className.replace(/ circled/g, '');
@@ -627,6 +658,7 @@ function toggleRow(chev){
 
 function bindTouch(){
   var box = $('rows');
+  if (!box) return;
 
   box.addEventListener('touchstart', function(e){
     lastTouchTime = Date.now();
@@ -822,34 +854,4 @@ function parseKaijiang(text, want){
     attrs = parseAttrs(open + inner);
     q = pick(attrs, ['expect', 'issue', 'qihao', 'qishu', 'term', 'period', 'stage', 'no']);
     d = pick(attrs, ['opendate', 'open_date', 'openday', 'open_day', 'opentime', 'open_time', 'date', 'day', 'time']);
-    numsRaw = pick(attrs, ['opencode', 'opennum', 'opennums', 'open_code', 'nums', 'numbers', 'number', 'num', 'result', 'code', 'value']);
-    if (!q) continue;
-    qs = String(q).replace(/[^0-9]/g, '');
-    if (!qs) continue;
-    nums = autoNums(numsRaw);
-    if (!nums || nums.length !== want) continue;
-    out.push({ q: qs, d: d || '', n: nums });
-  }
-  return out;
-}
-
-/* ================= 解析 JSON ================= */
-function looksDate(s){
-  return /(\d{4})[-\/年.]\d{1,2}[-\/月.]\d{1,2}/.test(s);
-}
-function digitArray(v){
-  if (!isArr(v) || (v.length !== 5 && v.length !== 7)) return null;
-  var out = [], i, s;
-  for (i = 0; i < v.length; i++){
-    s = String(v[i]).replace(/[^0-9]/g, '');
-    if (!s) return null;
-    out.push(s.charAt(s.length - 1));
-  }
-  return out;
-}
-function rowFromObject(o){
-  var keys = [], k, i, j, v;
-  for (k in o) if (o.hasOwnProperty(k)) keys.push(k);
-  if (!keys.length) return null;
-
-  var NUMK = ['opencode', 'open
+    numsRaw = pick(attrs, ['opencode', 'opennum', 'opennums', 'open_code', 'nums',
