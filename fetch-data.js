@@ -1,4 +1,4 @@
-// fetch-data.js —— 多地址探测版：谁通用谁
+// fetch-data.js —— v4：兼容 500.com 子标签 XML / 属性 XML / HTML 表格
 const fs = require('fs');
 const path = require('path');
 
@@ -21,18 +21,23 @@ function apiUrl(gameNo) {
     + `?gameNo=${gameNo}&provinceId=0&pageSize=30&isVerify=1&pageNo=1`;
 }
 
-/* ---------- 请求 ---------- */
+/* ---------- 请求（自动处理 GBK 编码） ---------- */
 async function grab(url, headers = {}) {
   const res = await fetch(url, {
     headers: { ...BASE_HEADERS, ...headers },
     redirect: 'follow',
     signal: AbortSignal.timeout(20000)
   });
-  const text = await res.text();
+  const buf = Buffer.from(await res.arrayBuffer());
+  let text = buf.toString('utf8');
+  const bad = (text.match(/\uFFFD/g) || []).length;
+  if (bad > 20) {
+    try { text = new TextDecoder('gbk').decode(buf); } catch (e) {}
+  }
   return { status: res.status, ok: res.ok, text };
 }
 
-/* ---------- 解析工具 ---------- */
+/* ---------- 工具 ---------- */
 function toCodes(raw, len) {
   const s = Array.isArray(raw) ? raw.join(' ') : String(raw == null ? '' : raw);
   const tokens = s.split(/[\s,，、+|]+/).filter(Boolean);
@@ -44,7 +49,7 @@ function toCodes(raw, len) {
 
 function attrOf(tag, name) {
   const m = tag.match(new RegExp(name + '\\s*=\\s*["\']([^"\']*)["\']', 'i'));
-  return m ? m[1].trim() : '';
+  return m ? m[1].replace(/<[^>]+>/g, '').trim() : '';
 }
 
 function dedupeSort(list) {
@@ -71,31 +76,32 @@ function mapApiItems(list, len) {
   return dedupeSort(out);
 }
 
-/* 三种格式一次全试：JSON / XML(row 标签) / HTML 表格 */
-function parseAny(text, len) {
-  const t = String(text || '').trim();
-
-  if (t.startsWith('{') || t.startsWith('[')) {
-    try {
-      const items = mapApiItems(pickList(JSON.parse(t)), len);
-      if (items.length) return items;
-    } catch (e) {}
-  }
-
-  const xml = [];
-  const rowRe = /<row\b[^>]*>/gi;
+/* 同时支持：属性写法 / 子标签写法 */
+function parseXmlRows(text, len) {
+  const out = [];
+  const rowRe = /<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/gi;
   let m;
-  while ((m = rowRe.exec(t))) {
-    const tag = m[0];
-    const issue = attrOf(tag, 'expect') || attrOf(tag, 'issue') || attrOf(tag, 'lotterydrawnum');
-    const date = (attrOf(tag, 'opendate') || attrOf(tag, 'date') || attrOf(tag, 'lotterydrawtime')).slice(0, 10);
-    const codes = toCodes(attrOf(tag, 'opencode') || attrOf(tag, 'code') || attrOf(tag, 'lotterydrawresult'), len);
-    if (issue && date && codes) xml.push({ issue, date, codes });
+  while ((m = rowRe.exec(text))) {
+    const attrs = m[1] || '';
+    const inner = m[2] || '';
+    const get = (name) => {
+      const a = attrOf(attrs, name);
+      if (a) return a;
+      const c = inner.match(new RegExp('<' + name + '>([\\s\\S]*?)</' + name + '>', 'i'));
+      return c ? c[1].replace(/<[^>]+>/g, '').trim() : '';
+    };
+    const issue = get('expect') || get('issue') || get('lotterydrawnum') || get('term');
+    const date = get('opendate') || get('date') || get('lotterydrawtime') || get('opentime');
+    const rawCode = get('opencode') || get('code') || get('lotterydrawresult') || get('opennum');
+    const codes = toCodes(rawCode, len);
+    if (issue && date && codes) out.push({ issue, date: date.slice(0, 10), codes });
   }
-  if (xml.length) return dedupeSort(xml);
+  return dedupeSort(out);
+}
 
-  const rows = t.match(/<tr[\s\S]*?<\/tr>/gi) || [];
-  const html = [];
+function parseHtmlRows(text, len) {
+  const rows = text.match(/<tr[\s\S]*?<\/tr>/gi) || [];
+  const out = [];
   for (const row of rows) {
     const tds = (row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) || [])
       .map(td => td.replace(/<[^>]+>/g, '').trim());
@@ -105,23 +111,37 @@ function parseAny(text, len) {
     if (!dateMatch) continue;
     const single = tds.filter(x => /^\d$/.test(x));
     const codes = single.length >= len ? single.slice(0, len) : toCodes(tds.slice(1).join(' '), len);
-    if (codes) html.push({ issue: tds[0], date: dateMatch[0], codes });
+    if (codes) out.push({ issue: tds[0], date: dateMatch[0], codes });
   }
-  return dedupeSort(html);
+  return dedupeSort(out);
 }
 
-/* ---------- 每个彩种的候选地址 ---------- */
+function parseAny(text, len) {
+  const t = String(text || '');
+  const trimmed = t.trim();
+
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      const items = mapApiItems(pickList(JSON.parse(trimmed)), len);
+      if (items.length) return items;
+    } catch (e) {}
+  }
+
+  const xml = parseXmlRows(t, len);
+  if (xml.length) return xml;
+
+  return parseHtmlRows(t, len);
+}
+
+/* ---------- 候选地址 ---------- */
 function candidates(game) {
   const list = [
     { name: '体彩官网', url: apiUrl(game.gameNo), headers: { Referer: 'https://static.sporttery.cn/' } }
   ];
-
-  const xmlCodes = game.key === 'qxc' ? ['qxc'] : ['plw', 'pl5', 'p5'];
+  const xmlCodes = game.key === 'qxc' ? ['qxc'] : ['plw', 'pl5'];
   for (const c of xmlCodes) {
     list.push({ name: `500XML-${c}`, url: `https://kaijiang.500.com/static/info/kaijiang/xml/${c}/list.xml` });
   }
-
-  list.push({ name: '500历史页', url: `https://datachart.500.com/${game.site}/history/newinc/history.php?limit=50&sort=0`, headers: { Referer: `https://datachart.500.com/${game.site}/` } });
   list.push({ name: '500开奖页', url: `https://kaijiang.500.com/${game.site}.shtml` });
   return list;
 }
@@ -136,10 +156,11 @@ async function fetchGame(game) {
       }
       const items = parseAny(r.text, game.len).slice(0, 30);
       if (items.length) {
-        console.log(`✓ ${game.name}｜${src.name} → ${items.length} 期，最新第 ${items[0].issue} 期（${items[0].date}）`);
+        console.log(`✓ ${game.name}｜${src.name} → ${items.length} 期，最新第 ${items[0].issue} 期（${items[0].date}），号码 ${items[0].codes.join(' ')}`);
         return items;
       }
-      console.warn(`· ${game.name}｜${src.name} → HTTP 200 但没解析出数据（长度 ${r.text.length}）`);
+      const snip = r.text.replace(/\s+/g, ' ').slice(0, 180);
+      console.warn(`· ${game.name}｜${src.name} → HTTP 200 未解析（长度 ${r.text.length}）片段：${snip}`);
     } catch (e) {
       console.warn(`· ${game.name}｜${src.name} → ${e.message}`);
     }
