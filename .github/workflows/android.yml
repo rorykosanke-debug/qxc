@@ -41,7 +41,8 @@ jobs:
             "appId": "com.rorykosanke.qxc",
             "appName": "开奖号码",
             "webDir": "www",
-            "server": { "androidScheme": "https" }
+            "server": { "androidScheme": "https" },
+            "plugins": { "CapacitorHttp": { "enabled": true } }
           }
           EOF
           npx cap add android
@@ -63,5 +64,5 @@ jobs:
         with:
           tag_name: apk-${{ github.run_number }}
           name: 开奖号码 APK 第 ${{ github.run_number }} 版
-          body: 自动构建，包含打包时的最新开奖数据
+          body: 自动构建，支持手机端直连抓取数据
           files: out/*.apk
