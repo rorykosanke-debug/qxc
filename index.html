@@ -6,6 +6,25 @@
 <meta name="theme-color" content="#f43f5e">
 <title>七星彩 · 排列五 开奖号码</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+  /* 启动诊断：任何错误都会显示在屏幕底部 */
+  window.__errs = [];
+  function __showErr(msg) {
+    window.__errs.push(msg);
+    var el = document.getElementById('bootError');
+    if (el) {
+      el.textContent = '⚠ ' + window.__errs.join(' ｜ ');
+      el.className = 'fixed bottom-2 left-2 right-2 z-[60] bg-red-600 text-white text-[11px] p-2 rounded leading-snug';
+    }
+  }
+  window.onerror = function (msg, src, line, col) {
+    __showErr(String(msg) + ' @' + line + ':' + col);
+  };
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e.reason;
+    __showErr('Promise: ' + ((r && r.message) ? r.message : String(r)));
+  });
+</script>
 <style>
   html{-webkit-text-size-adjust:100%}
   *{
@@ -114,28 +133,28 @@
       <div class="flex items-center justify-between gap-2">
         <h1 class="text-[19px] font-extrabold tracking-tight">开奖号码</h1>
         <div class="flex items-center gap-1">
-          <button id="btnColor" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="数字颜色">
+          <button id="btnColor" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center" aria-label="数字颜色">
             <span id="colorDot" class="w-3.5 h-3.5 rounded-full" style="background:#e11d48"></span>
           </button>
-          <button id="btnRing" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="圆圈颜色">
+          <button id="btnRing" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center" aria-label="圆圈颜色">
             <span id="ringDot" class="w-3.5 h-3.5 rounded-full" style="border:2px solid #e11d48"></span>
           </button>
           <button id="btnFold" class="fold" aria-label="收起">⌃</button>
-          <button id="btnRefresh" class="px-3 py-1.5 rounded-full bg-white text-slate-600 text-[13px] font-medium shadow-sm active:scale-95 transition">刷新</button>
+          <button id="btnRefresh" class="px-3 py-1.5 rounded-full bg-white text-slate-600 text-[13px] font-medium shadow-sm">刷新</button>
         </div>
       </div>
 
       <div class="mt-2 grid grid-cols-2 gap-2">
-        <button data-game="qxc" class="tab"></button>
-        <button data-game="pl5" class="tab"></button>
+        <button id="tabQxc" data-game="qxc" class="tab h-10 rounded-xl font-bold text-[15px] bg-white text-slate-500">七星彩</button>
+        <button id="tabPl5" data-game="pl5" class="tab h-10 rounded-xl font-bold text-[15px] bg-white text-slate-500">排列五</button>
       </div>
 
       <div class="mt-1.5 mb-1 flex items-center justify-between gap-2">
         <p id="statusLine" class="text-[10px] text-slate-400 min-h-[13px] truncate"></p>
         <div class="flex items-center gap-1 shrink-0">
-          <button id="btnMark" class="h-7 px-2 rounded-full text-[11px] font-semibold shadow-sm transition bg-white text-slate-500">标记</button>
-          <button id="btnClear" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm active:scale-95 transition">清除</button>
-          <button id="btnTail" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm active:scale-95 transition">
+          <button id="btnMark" class="h-7 px-2 rounded-full text-[11px] font-semibold shadow-sm bg-white text-slate-500">标记</button>
+          <button id="btnClear" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm">清除</button>
+          <button id="btnTail" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm">
             <span id="tailLabel">7位</span>
           </button>
         </div>
@@ -143,15 +162,15 @@
     </div>
 
     <div id="foldBar" class="hidden items-center justify-end gap-1 py-1">
-      <button id="btnColor2" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="数字颜色">
+      <button id="btnColor2" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center" aria-label="数字颜色">
         <span id="colorDot2" class="w-3.5 h-3.5 rounded-full" style="background:#e11d48"></span>
       </button>
-      <button id="btnRing2" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="圆圈颜色">
+      <button id="btnRing2" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center" aria-label="圆圈颜色">
         <span id="ringDot2" class="w-3.5 h-3.5 rounded-full" style="border:2px solid #e11d48"></span>
       </button>
-      <button id="btnMark2" class="h-7 px-2 rounded-full text-[11px] font-semibold shadow-sm transition bg-white text-slate-500">标记</button>
-      <button id="btnClear2" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm active:scale-95 transition">清除</button>
-      <button id="btnTail2" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm active:scale-95 transition">
+      <button id="btnMark2" class="h-7 px-2 rounded-full text-[11px] font-semibold shadow-sm bg-white text-slate-500">标记</button>
+      <button id="btnClear2" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm">清除</button>
+      <button id="btnTail2" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm">
         <span id="tailLabel2">7位</span>
       </button>
       <button id="btnFold2" class="fold" aria-label="展开">⌄</button>
@@ -167,31 +186,30 @@
 </div>
 
 <div id="toast" class="fixed left-1/2 -translate-x-1/2 top-3 z-50 hidden"></div>
-
 <div id="scrollTrack"><div id="scrollThumb"></div></div>
+<div id="bootError" class="hidden"></div>
 
 <script>
-const NAMES = { qxc: '七星彩', pl5: '排列五' };
-const LENS  = { qxc: 7, pl5: 5 };
-const BIG_N = 4;
-const REMOTE_DATA = 'https://rorykosanke-debug.github.io/qxc/data.json';
-const LS_COLOR = 'lottery_color_idx';
-const LS_RING  = 'lottery_ring_idx';
-const LS_TAIL  = 'lottery_hide_tail';
-const LS_MARK  = 'lottery_mark_mode';
-const LS_CACHE = 'lottery_data_cache';      // 手机抓取结果的本地快照
+var NAMES = { qxc: '七星彩', pl5: '排列五' };
+var LENS  = { qxc: 7, pl5: 5 };
+var BIG_N = 4;
+var REMOTE_DATA = 'https://rorykosanke-debug.github.io/qxc/data.json';
+var LS_COLOR = 'lottery_color_idx';
+var LS_RING  = 'lottery_ring_idx';
+var LS_TAIL  = 'lottery_hide_tail';
+var LS_MARK  = 'lottery_mark_mode';
+var LS_CACHE = 'lottery_data_cache';
 
-const MOVE_TAP = 22;
-let lastTouchAt = 0;
+var MOVE_TAP = 22;
+var lastTouchAt = 0;
 
-/* 手机直连抓取用的数据源（APK 内有效，网页会被 CORS 拦，会自动跳过） */
-const DIRECT_SRC = [
+var DIRECT_SRC = [
   { key: 'qxc', name: '七星彩', len: 7, codes: ['qxc'] },
   { key: 'pl5', name: '排列五', len: 5, codes: ['plw', 'pl5'] }
 ];
-const XML_BASE = 'https://kaijiang.500.com/static/info/kaijiang/xml/';
+var XML_BASE = 'https://kaijiang.500.com/static/info/kaijiang/xml/';
 
-const PALETTES = [
+var PALETTES = [
   { name:'玫红', bg:'#fff1f2', fg:'#e11d48', dot:'#e11d48' },
   { name:'蓝色', bg:'#eff6ff', fg:'#2563eb', dot:'#2563eb' },
   { name:'绿色', bg:'#ecfdf5', fg:'#059669', dot:'#059669' },
@@ -200,7 +218,7 @@ const PALETTES = [
   { name:'金棕', bg:'#fffbeb', fg:'#b45309', dot:'#b45309' }
 ];
 
-const RING_COLORS = [
+var RING_COLORS = [
   { name:'玫红', c:'#e11d48' },
   { name:'蓝',   c:'#2563eb' },
   { name:'绿',   c:'#059669' },
@@ -211,14 +229,13 @@ const RING_COLORS = [
   { name:'灰',   c:'#64748b' }
 ];
 
-const TAB_ON  = 'tab h-10 rounded-xl font-bold text-[15px] bg-rose-600 text-white shadow-lg shadow-rose-600/25 active:scale-[.98] transition';
-const TAB_OFF = 'tab h-10 rounded-xl font-bold text-[15px] bg-white text-slate-500 active:scale-[.98] transition';
+var TAB_ON  = 'tab h-10 rounded-xl font-bold text-[15px] bg-rose-600 text-white shadow-lg';
+var TAB_OFF = 'tab h-10 rounded-xl font-bold text-[15px] bg-white text-slate-500';
 
-const BTN_BASE = 'h-7 px-2 rounded-full text-[11px] font-semibold shadow-sm transition ';
-const BTN_OFF  = BTN_BASE + 'bg-white text-slate-500';
-const BTN_ON   = BTN_BASE + 'bg-rose-600 text-white';
+var BTN_OFF = 'h-7 px-2 rounded-full text-[11px] font-semibold shadow-sm bg-white text-slate-500';
+var BTN_ON  = 'h-7 px-2 rounded-full text-[11px] font-semibold shadow-sm bg-rose-600 text-white';
 
-const STATE = {
+var STATE = {
   game: 'qxc',
   remote: { qxc: [], pl5: [], updatedAt: null },
   loading: true,
@@ -234,45 +251,51 @@ const STATE = {
   links: []
 };
 
-const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function $(id) { return document.getElementById(id); }
 
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c];
+  });
+}
+
+/* ---------- 号码球 ---------- */
 function ballsHtml(it, mode) {
-  const codes = it.codes;
-  const shown = STATE.hideTail ? codes.slice(0, BIG_N) : codes;
-  const wrap = mode === 'list' ? 'balls list' : 'balls';
-  const inner = shown.map((c, i) => {
-    let cls = 'ball';
+  var codes = it.codes;
+  var shown = STATE.hideTail ? codes.slice(0, BIG_N) : codes;
+  var wrap = mode === 'list' ? 'balls list' : 'balls';
+  var inner = '';
+  for (var i = 0; i < shown.length; i++) {
+    var cls = 'ball';
     if (STATE.hideTail) cls += ' zoom';
     else if (i >= BIG_N) cls += ' xs';
-    const key = it.issue + ':' + i;
+    var key = it.issue + ':' + i;
     if (STATE.circled.has(key)) cls += ' circled';
-    return `<div class="${cls}" data-cell="${esc(key)}">${esc(c)}</div>`;
-  }).join('');
-  return `<div class="${wrap}">${inner}</div>`;
+    inner += '<div class="' + cls + '" data-cell="' + esc(key) + '">' + esc(shown[i]) + '</div>';
+  }
+  return '<div class="' + wrap + '">' + inner + '</div>';
 }
 
 function blankRowHtml() {
-  const count = STATE.hideTail ? BIG_N : LENS[STATE.game];
-  let cells = '';
-  for (let i = 0; i < count; i++) {
-    let cls = 'ball blank';
+  var count = STATE.hideTail ? BIG_N : LENS[STATE.game];
+  var cells = '';
+  for (var i = 0; i < count; i++) {
+    var cls = 'ball blank';
     if (STATE.hideTail) cls += ' zoom';
     else if (i >= BIG_N) cls += ' xs';
-    cells += `<div class="${cls}"></div>`;
+    cells += '<div class="' + cls + '"></div>';
   }
-  return `<div class="relative border-t border-slate-100">
-    <div class="px-3.5"><div class="balls list">${cells}</div></div>
-  </div>`;
+  return '<div class="relative border-t border-slate-100">' +
+    '<div class="px-3.5"><div class="balls list">' + cells + '</div></div></div>';
 }
 
 /* ---------- 颜色 ---------- */
 function applyPalette(idx) {
-  const p = PALETTES[idx % PALETTES.length];
-  const root = document.documentElement.style;
+  var p = PALETTES[idx % PALETTES.length];
+  var root = document.documentElement.style;
   root.setProperty('--ball-bg', p.bg);
   root.setProperty('--ball-fg', p.fg);
-  const d1 = $('colorDot'), d2 = $('colorDot2');
+  var d1 = $('colorDot'), d2 = $('colorDot2');
   if (d1) d1.style.background = p.dot;
   if (d2) d2.style.background = p.dot;
   try { localStorage.setItem(LS_COLOR, String(idx % PALETTES.length)); } catch (e) {}
@@ -285,20 +308,20 @@ function ringColor() {
 }
 
 function applyRing() {
-  const c = ringColor();
+  var c = ringColor();
   document.documentElement.style.setProperty('--ring-color', c);
-  const r1 = $('ringDot'), r2 = $('ringDot2');
+  var r1 = $('ringDot'), r2 = $('ringDot2');
   if (r1) r1.style.borderColor = c;
   if (r2) r2.style.borderColor = c;
   drawLinks();
 }
 
 function loadPrefs() {
-  let ci = 0, ri = -1;
+  var ci = 0, ri = -1;
   try {
-    const v = parseInt(localStorage.getItem(LS_COLOR) || '0', 10);
+    var v = parseInt(localStorage.getItem(LS_COLOR) || '0', 10);
     if (!isNaN(v)) ci = v;
-    const r = localStorage.getItem(LS_RING);
+    var r = localStorage.getItem(LS_RING);
     if (r !== null && r !== '') ri = parseInt(r, 10);
     STATE.hideTail = localStorage.getItem(LS_TAIL) === '1';
     STATE.markMode = localStorage.getItem(LS_MARK) === '1';
@@ -319,64 +342,69 @@ function nextRing() {
 
 /* ---------- 解析 ---------- */
 function toCodes(raw, len) {
-  const s = Array.isArray(raw) ? raw.join(' ') : String(raw == null ? '' : raw);
-  const tokens = s.split(/[\s,，、+|]+/).filter(Boolean);
-  if (tokens.length === len && tokens.every(t => /^\d$/.test(t))) return tokens;
-  const digits = s.replace(/\D/g, '');
+  var s = Array.isArray(raw) ? raw.join(' ') : String(raw === null || raw === undefined ? '' : raw);
+  var tokens = s.split(/[\s,，、+|]+/).filter(Boolean);
+  if (tokens.length === len && tokens.every(function (t) { return /^\d$/.test(t); })) return tokens;
+  var digits = s.replace(/\D/g, '');
   if (digits.length < len) return null;
   return digits.slice(0, len).split('');
 }
 
 function parseXmlRows(text, len) {
-  const out = [];
-  const seen = new Set();
-  const rowRe = /<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/gi;
-  let m;
+  var out = [];
+  var seen = {};
+  var rowRe = /<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/gi;
+  var m;
   while ((m = rowRe.exec(text))) {
-    const attrs = m[1] || '';
-    const inner = m[2] || '';
-    const get = (n) => {
-      const a = attrs.match(new RegExp(n + '\\s*=\\s*["\']([^"\']*)["\']', 'i'));
+    var attrs = m[1] || '';
+    var inner = m[2] || '';
+    var get = function (n) {
+      var a = attrs.match(new RegExp(n + '\\s*=\\s*["\']([^"\']*)["\']', 'i'));
       if (a) return a[1].trim();
-      const c = inner.match(new RegExp('<' + n + '>([\\s\\S]*?)</' + n + '>', 'i'));
+      var c = inner.match(new RegExp('<' + n + '>([\\s\\S]*?)</' + n + '>', 'i'));
       return c ? c[1].replace(/<[^>]+>/g, '').trim() : '';
     };
-    const issue = get('expect') || get('issue');
-    const date = (get('opendate') || get('date')).slice(0, 10);
-    const codes = toCodes(get('opencode') || get('code'), len);
-    if (issue && date && codes && !seen.has(issue)) {
-      seen.add(issue);
-      out.push({ issue, date, codes });
+    var issue = get('expect') || get('issue');
+    var date = (get('opendate') || get('date')).slice(0, 10);
+    var codes = toCodes(get('opencode') || get('code'), len);
+    if (issue && date && codes && !seen[issue]) {
+      seen[issue] = 1;
+      out.push({ issue: issue, date: date, codes: codes });
     }
   }
-  return out.sort((a, b) => Number(b.issue) - Number(a.issue));
+  return out.sort(function (a, b) { return Number(b.issue) - Number(a.issue); });
 }
 
 function listFor(game) {
-  return [...STATE.remote[game]].sort((a, b) => (Number(a.issue) || 0) - (Number(b.issue) || 0));
+  return STATE.remote[game].slice().sort(function (a, b) {
+    return (Number(a.issue) || 0) - (Number(b.issue) || 0);
+  });
 }
 
-const pad = n => String(n).padStart(2, '0');
+function pad2(n) { return String(n).length < 2 ? '0' + n : String(n); }
+
 function fmtTime(iso) {
-  const d = new Date(iso);
-  if (isNaN(d)) return iso;
-  return `${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso);
+  return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
-let toastTimer;
+
+var toastTimer = null;
 function toast(msg) {
-  const t = $('toast');
-  t.innerHTML = `<div class="anim-pop px-3 py-2 rounded-full bg-slate-900/90 text-white text-[13px] shadow-lg">${esc(msg)}</div>`;
+  var t = $('toast');
+  if (!t) return;
+  t.innerHTML = '<div class="anim-pop px-3 py-2 rounded-full bg-slate-900/90 text-white text-[13px] shadow-lg">' + esc(msg) + '</div>';
   t.classList.remove('hidden');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.add('hidden'), 1500);
+  toastTimer = setTimeout(function () { t.classList.add('hidden'); }, 1500);
 }
 
 /* ---------- 连线层 ---------- */
-const SVG_NS = 'http://www.w3.org/2000/svg';
-let dragFrom = null, dragX = 0, dragY = 0;
+var SVG_NS = 'http://www.w3.org/2000/svg';
+var dragFrom = null, dragX = 0, dragY = 0;
 
 function layer() {
-  let s = document.getElementById('linkLayer');
+  var s = document.getElementById('linkLayer');
   if (!s) {
     s = document.createElementNS(SVG_NS, 'svg');
     s.id = 'linkLayer';
@@ -386,27 +414,29 @@ function layer() {
   return s;
 }
 
-function cellEl(key) { return document.querySelector(`[data-cell="${key}"]`); }
+function cellEl(key) {
+  return document.querySelector('[data-cell="' + key + '"]');
+}
 
 function setCircle(key, on) {
-  const el = cellEl(key);
+  var el = cellEl(key);
   if (on) { STATE.circled.add(key); if (el) el.classList.add('circled'); }
   else { STATE.circled.delete(key); if (el) el.classList.remove('circled'); }
 }
 
 function centerDoc(el) {
-  const r = el.getBoundingClientRect();
+  var r = el.getBoundingClientRect();
   return { x: r.left + r.width / 2 + window.scrollX, y: r.top + r.height / 2 + window.scrollY };
 }
 
 function drawLinks() {
-  const s = layer();
+  var s = layer();
   s.setAttribute('height', String(document.documentElement.scrollHeight));
   while (s.firstChild) s.removeChild(s.firstChild);
 
-  const color = ringColor();
-  const addLine = (p1, p2, dashed) => {
-    const line = document.createElementNS(SVG_NS, 'line');
+  var color = ringColor();
+  function addLine(p1, p2, dashed) {
+    var line = document.createElementNS(SVG_NS, 'line');
     line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
     line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
     line.setAttribute('stroke', color);
@@ -415,22 +445,22 @@ function drawLinks() {
     line.setAttribute('opacity', dashed ? '0.7' : '0.9');
     if (dashed) line.setAttribute('stroke-dasharray', '6 5');
     s.appendChild(line);
-  };
+  }
 
-  STATE.links.forEach(l => {
-    const a = cellEl(l.a), b = cellEl(l.b);
-    if (!a || !b) return;
-    addLine(centerDoc(a), centerDoc(b), false);
-  });
+  for (var i = 0; i < STATE.links.length; i++) {
+    var l = STATE.links[i];
+    var a = cellEl(l.a), b = cellEl(l.b);
+    if (a && b) addLine(centerDoc(a), centerDoc(b), false);
+  }
 
   if (dragFrom) {
-    const a = cellEl(dragFrom);
-    if (a) addLine(centerDoc(a), { x: dragX, y: dragY }, true);
+    var da = cellEl(dragFrom);
+    if (da) addLine(centerDoc(da), { x: dragX, y: dragY }, true);
   }
 }
 
-/* ---------- 交互 ---------- */
-const press = { key: null, x0: 0, y0: 0, moved: false, dragging: false, timer: null, wasCircled: false };
+/* ---------- 点击 / 拖拽 ---------- */
+var press = { key: null, x0: 0, y0: 0, moved: false, dragging: false, timer: null, wasCircled: false };
 
 function pressStart(key, x, y) {
   pressReset();
@@ -440,13 +470,13 @@ function pressStart(key, x, y) {
   if (!STATE.markMode) return;
   if (!press.wasCircled) setCircle(key, true);
 
-  press.timer = setTimeout(() => {
+  press.timer = setTimeout(function () {
     if (!press.key || press.moved) return;
     press.dragging = true;
     dragFrom = press.key;
     dragX = press.x0 + window.scrollX;
     dragY = press.y0 + window.scrollY;
-    const c = cellEl(press.key);
+    var c = cellEl(press.key);
     if (c) c.classList.add('dragging');
     if (navigator.vibrate) navigator.vibrate(12);
     drawLinks();
@@ -455,8 +485,8 @@ function pressStart(key, x, y) {
 
 function pressMove(x, y) {
   if (!press.key) return false;
-  const dx = x - press.x0, dy = y - press.y0;
-  const dist = Math.sqrt(dx * dx + dy * dy);
+  var dx = x - press.x0, dy = y - press.y0;
+  var dist = Math.sqrt(dx * dx + dy * dy);
 
   if (!press.dragging && dist > MOVE_TAP) {
     press.moved = true;
@@ -473,23 +503,26 @@ function pressMove(x, y) {
 }
 
 function pressEnd(x, y) {
-  const wasDragging = press.dragging;
-  const from = press.key;
-  const wasCircled = press.wasCircled;
-  const moved = press.moved;
+  var wasDragging = press.dragging;
+  var from = press.key;
+  var wasCircled = press.wasCircled;
+  var moved = press.moved;
   clearTimeout(press.timer);
   if (!from) { pressReset(); return; }
 
   if (wasDragging) {
-    const el = document.elementFromPoint(x, y);
-    const target = el && el.closest ? el.closest('[data-cell]') : null;
-    const toKey = target ? target.dataset.cell : null;
-    const srcEl = cellEl(from);
+    var el = document.elementFromPoint(x, y);
+    var target = el && el.closest ? el.closest('[data-cell]') : null;
+    var toKey = target ? target.getAttribute('data-cell') : null;
+    var srcEl = cellEl(from);
     if (srcEl) srcEl.classList.remove('dragging');
 
     if (toKey && toKey !== from) {
-      const exists = STATE.links.some(l =>
-        (l.a === from && l.b === toKey) || (l.a === toKey && l.b === from));
+      var exists = false;
+      for (var i = 0; i < STATE.links.length; i++) {
+        var l = STATE.links[i];
+        if ((l.a === from && l.b === toKey) || (l.a === toKey && l.b === from)) { exists = true; break; }
+      }
       if (!exists) {
         STATE.links.push({ a: from, b: toKey });
         toast('已连线，共 ' + STATE.links.length + ' 条');
@@ -513,36 +546,36 @@ function pressReset() {
 }
 
 function keyAtEvent(e) {
-  const el = e.target;
-  return el && el.closest ? (el.closest('[data-cell]') || null) : null;
+  var el = e.target;
+  return el && el.closest ? el.closest('[data-cell]') : null;
 }
 
-document.addEventListener('touchstart', e => {
+document.addEventListener('touchstart', function (e) {
   lastTouchAt = Date.now();
-  const cell = keyAtEvent(e);
+  var cell = keyAtEvent(e);
   if (!cell) return;
-  const t = e.touches[0];
-  pressStart(cell.dataset.cell, t.clientX, t.clientY);
+  var t = e.touches[0];
+  pressStart(cell.getAttribute('data-cell'), t.clientX, t.clientY);
 }, { passive: true });
 
-document.addEventListener('touchmove', e => {
+document.addEventListener('touchmove', function (e) {
   lastTouchAt = Date.now();
   if (!press.key) return;
-  const t = e.touches[0];
+  var t = e.touches[0];
   if (pressMove(t.clientX, t.clientY) && e.cancelable) e.preventDefault();
 }, { passive: false });
 
-document.addEventListener('touchend', e => {
+document.addEventListener('touchend', function (e) {
   lastTouchAt = Date.now();
   if (!press.key) return;
-  const t = e.changedTouches[0];
+  var t = e.changedTouches[0];
   pressEnd(t.clientX, t.clientY);
 }, { passive: true });
 
-document.addEventListener('touchcancel', e => {
+document.addEventListener('touchcancel', function (e) {
   lastTouchAt = Date.now();
   if (press.key) {
-    const t = (e.changedTouches && e.changedTouches[0]) || { clientX: press.x0, clientY: press.y0 };
+    var t = (e.changedTouches && e.changedTouches[0]) || { clientX: press.x0, clientY: press.y0 };
     pressEnd(t.clientX, t.clientY);
   }
   dragFrom = null;
@@ -555,326 +588,278 @@ function isGhostMouse(e) {
   return false;
 }
 
-document.addEventListener('mousedown', e => {
+document.addEventListener('mousedown', function (e) {
   if (isGhostMouse(e)) return;
-  const cell = keyAtEvent(e);
+  var cell = keyAtEvent(e);
   if (!cell) return;
-  pressStart(cell.dataset.cell, e.clientX, e.clientY);
+  pressStart(cell.getAttribute('data-cell'), e.clientX, e.clientY);
 });
-document.addEventListener('mousemove', e => {
+document.addEventListener('mousemove', function (e) {
   if (isGhostMouse(e)) return;
   if (press.key) pressMove(e.clientX, e.clientY);
 });
-document.addEventListener('mouseup', e => {
+document.addEventListener('mouseup', function (e) {
   if (isGhostMouse(e)) return;
   if (press.key) pressEnd(e.clientX, e.clientY);
 });
 
-document.addEventListener('contextmenu', e => {
+document.addEventListener('contextmenu', function (e) {
   if (e.target.closest && e.target.closest('[data-cell],[data-toggle]')) e.preventDefault();
 });
-document.addEventListener('selectstart', e => {
+document.addEventListener('selectstart', function (e) {
   if (e.target.closest && e.target.closest('[data-cell]')) e.preventDefault();
 });
 
-window.addEventListener('resize', () => { drawLinks(); updateScrollBar(); });
+window.addEventListener('resize', function () { drawLinks(); updateScrollBar(); });
 
-/* ---------- 右侧滑动条 ---------- */
-let sbDragging = false;
+/* ---------- 滑动条 ---------- */
+var sbDragging = false;
 
 function updateScrollBar() {
-  const track = $('scrollTrack'), thumb = $('scrollThumb');
+  var track = $('scrollTrack'), thumb = $('scrollThumb');
   if (!track || !thumb) return;
-  const docH = document.documentElement.scrollHeight;
-  const winH = window.innerHeight;
+  var docH = document.documentElement.scrollHeight;
+  var winH = window.innerHeight;
   if (docH <= winH + 8) { track.style.display = 'none'; return; }
   track.style.display = 'block';
 
-  const trackH = track.clientHeight;
-  const th = Math.max(40, Math.round(trackH * (winH / docH)));
+  var trackH = track.clientHeight;
+  var th = Math.max(40, Math.round(trackH * (winH / docH)));
   thumb.style.height = th + 'px';
 
-  const maxScroll = docH - winH;
-  const top = maxScroll > 0 ? (window.scrollY / maxScroll) * (trackH - th) : 0;
-  thumb.style.transform = `translateY(${Math.max(0, Math.min(trackH - th, top))}px)`;
+  var maxScroll = docH - winH;
+  var top = maxScroll > 0 ? (window.scrollY / maxScroll) * (trackH - th) : 0;
+  thumb.style.transform = 'translateY(' + Math.max(0, Math.min(trackH - th, top)) + 'px)';
 }
 
 function sbJump(clientY) {
-  const track = $('scrollTrack'), thumb = $('scrollThumb');
-  const rect = track.getBoundingClientRect();
-  const trackH = rect.height;
-  const th = thumb.offsetHeight;
-  let y = clientY - rect.top - th / 2;
+  var track = $('scrollTrack'), thumb = $('scrollThumb');
+  var rect = track.getBoundingClientRect();
+  var trackH = rect.height;
+  var th = thumb.offsetHeight;
+  var y = clientY - rect.top - th / 2;
   y = Math.max(0, Math.min(trackH - th, y));
-  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-  const ratio = (trackH - th) > 0 ? y / (trackH - th) : 0;
+  var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  var ratio = (trackH - th) > 0 ? y / (trackH - th) : 0;
   window.scrollTo(0, ratio * maxScroll);
   updateScrollBar();
 }
 
 (function initScrollBar() {
-  const track = $('scrollTrack');
+  var track = $('scrollTrack');
   if (!track) return;
-  track.addEventListener('touchstart', e => { sbDragging = true; sbJump(e.touches[0].clientY); e.preventDefault(); }, { passive: false });
-  track.addEventListener('touchmove', e => { if (!sbDragging) return; sbJump(e.touches[0].clientY); e.preventDefault(); }, { passive: false });
-  track.addEventListener('touchend', () => { sbDragging = false; }, { passive: true });
-  track.addEventListener('touchcancel', () => { sbDragging = false; }, { passive: true });
-  track.addEventListener('mousedown', e => { if (isGhostMouse(e)) return; sbDragging = true; sbJump(e.clientY); });
-  document.addEventListener('mousemove', e => { if (isGhostMouse(e)) return; if (sbDragging) sbJump(e.clientY); });
-  document.addEventListener('mouseup', e => { if (isGhostMouse(e)) return; sbDragging = false; });
+  track.addEventListener('touchstart', function (e) {
+    sbDragging = true; sbJump(e.touches[0].clientY); e.preventDefault();
+  }, { passive: false });
+  track.addEventListener('touchmove', function (e) {
+    if (!sbDragging) return; sbJump(e.touches[0].clientY); e.preventDefault();
+  }, { passive: false });
+  track.addEventListener('touchend', function () { sbDragging = false; }, { passive: true });
+  track.addEventListener('touchcancel', function () { sbDragging = false; }, { passive: true });
+  track.addEventListener('mousedown', function (e) {
+    if (isGhostMouse(e)) return; sbDragging = true; sbJump(e.clientY);
+  });
+  document.addEventListener('mousemove', function (e) {
+    if (isGhostMouse(e)) return;
+    if (sbDragging) sbJump(e.clientY);
+  });
+  document.addEventListener('mouseup', function (e) {
+    if (isGhostMouse(e)) return;
+    sbDragging = false;
+  });
   window.addEventListener('scroll', updateScrollBar, { passive: true });
   updateScrollBar();
 })();
 
-/* ---------- 单行 ---------- */
+/* ---------- 行 ---------- */
 function rowHtml(it) {
-  const open = STATE.expandAll;
-  const info = open
-    ? `<div class="anim-fade mb-0.5 text-[10px] leading-tight pl-1">
-         <span class="num font-semibold text-slate-500">${esc(it.issue)}</span>
-         <span class="num text-slate-300 ml-1">${esc(it.date)}</span>
-       </div>`
+  var open = STATE.expandAll;
+  var info = open
+    ? '<div class="anim-fade mb-0.5 text-[10px] leading-tight pl-1">' +
+      '<span class="num font-semibold text-slate-500">' + esc(it.issue) + '</span>' +
+      '<span class="num text-slate-300 ml-1">' + esc(it.date) + '</span></div>'
     : '';
 
-  return `<div class="relative border-t border-slate-100">
-    <button data-toggle="1" class="caret absolute left-0.5 top-1/2 -translate-y-1/2 ${open ? 'open' : ''}" aria-label="展开或收起全部">›</button>
-    <div class="px-3.5">
-      ${info}
-      ${ballsHtml(it, 'list')}
-    </div>
-  </div>`;
+  return '<div class="relative border-t border-slate-100">' +
+    '<button data-toggle="1" class="caret absolute left-0.5 top-1/2 -translate-y-1/2 ' + (open ? 'open' : '') + '">›</button>' +
+    '<div class="px-3.5">' + info + ballsHtml(it, 'list') + '</div></div>';
 }
 
 function render() {
-  document.querySelectorAll('.tab').forEach(btn => {
-    const on = btn.dataset.game === STATE.game;
+  var tabs = document.querySelectorAll('.tab');
+  for (var i = 0; i < tabs.length; i++) {
+    var btn = tabs[i];
+    var on = btn.getAttribute('data-game') === STATE.game;
     btn.className = on ? TAB_ON : TAB_OFF;
-    btn.textContent = NAMES[btn.dataset.game];
-  });
+  }
 
-  $('headerAll').classList.toggle('hidden', STATE.folded);
-  $('foldBar').classList.toggle('hidden', !STATE.folded);
-  $('foldBar').classList.toggle('flex', STATE.folded);
+  var headerAll = $('headerAll'), foldBar = $('foldBar');
+  if (headerAll) headerAll.classList.toggle('hidden', STATE.folded);
+  if (foldBar) {
+    foldBar.classList.toggle('hidden', !STATE.folded);
+    foldBar.classList.toggle('flex', STATE.folded);
+  }
 
-  const label = (STATE.hideTail ? BIG_N : LENS[STATE.game]) + '位';
-  const l1 = $('tailLabel'), l2 = $('tailLabel2');
+  var label = (STATE.hideTail ? BIG_N : LENS[STATE.game]) + '位';
+  var l1 = $('tailLabel'), l2 = $('tailLabel2');
   if (l1) l1.textContent = label;
   if (l2) l2.textContent = label;
 
-  ['btnMark', 'btnMark2'].forEach(id => {
-    const b = $(id);
+  ['btnMark', 'btnMark2'].forEach(function (id) {
+    var b = $(id);
     if (!b) return;
     b.className = STATE.markMode ? BTN_ON : BTN_OFF;
     b.textContent = STATE.markMode ? '标记中' : '标记';
   });
 
-  const s = $('statusLine');
-  if (STATE.error) {
-    s.textContent = STATE.error;
-    s.className = 'text-[10px] text-rose-500 min-h-[13px] truncate';
-  } else if (STATE.loading) {
-    s.textContent = '正在抓取数据…';
-    s.className = 'text-[10px] text-slate-400 min-h-[13px] truncate';
-  } else {
-    const src = STATE.source ? '（' + STATE.source + '）' : '';
-    s.textContent = (STATE.remote.updatedAt ? '更新于 ' + fmtTime(STATE.remote.updatedAt) : '') + src;
-    s.className = 'text-[10px] text-slate-400 min-h-[13px] truncate';
+  var s = $('statusLine');
+  if (s) {
+    if (STATE.error) {
+      s.textContent = STATE.error;
+      s.className = 'text-[10px] text-rose-500 min-h-[13px] truncate';
+    } else if (STATE.loading) {
+      s.textContent = '正在抓取数据…';
+      s.className = 'text-[10px] text-slate-400 min-h-[13px] truncate';
+    } else {
+      var src = STATE.source ? '（' + STATE.source + '）' : '';
+      s.textContent = (STATE.remote.updatedAt ? '更新于 ' + fmtTime(STATE.remote.updatedAt) : '') + src;
+      s.className = 'text-[10px] text-slate-400 min-h-[13px] truncate';
+    }
   }
 
-  const main = $('main');
-  const list = listFor(STATE.game);
+  var main = $('main');
+  if (!main) return;
+  var list = listFor(STATE.game);
 
   if (!list.length) {
-    main.innerHTML = `<section class="bg-white rounded-2xl p-6 text-center shadow-sm">
-      <div class="text-4xl">🎯</div>
-      <p class="mt-3 font-semibold">还没有${NAMES[STATE.game]}数据</p>
-      <p class="mt-1.5 text-[11px] text-slate-400 leading-relaxed">
-        点右上「刷新」重试，或检查网络。
-      </p>
-    </section>`;
+    main.innerHTML = '<section class="bg-white rounded-2xl p-6 text-center shadow-sm">' +
+      '<div class="text-4xl">🎯</div>' +
+      '<p class="mt-3 font-semibold">还没有' + NAMES[STATE.game] + '数据</p>' +
+      '<p class="mt-1.5 text-[11px] text-slate-400 leading-relaxed">点右上「刷新」重试，或检查网络。</p>' +
+      '</section>';
     updateScrollBar();
     return;
   }
 
-  const latest = list[list.length - 1];
-  const n = list.length;
-  const blanks = 4 - (n % 4);
+  var latest = list[list.length - 1];
+  var n = list.length;
+  var blanks = 4 - (n % 4);
 
-  const rows = [];
-  list.forEach(it => rows.push(rowHtml(it)));
-  for (let b = 0; b < blanks; b++) rows.push(blankRowHtml());
+  var rows = [];
+  for (var k = 0; k < n; k++) rows.push(rowHtml(list[k]));
+  for (var b = 0; b < blanks; b++) rows.push(blankRowHtml());
 
-  const html = [];
-  rows.forEach((h, i) => {
-    html.push(h);
-    if ((i + 1) % 4 === 0 && i !== rows.length - 1) {
-      html.push('<div class="h-[2.5px] bg-slate-300/80"></div>');
+  var html = '';
+  for (var j = 0; j < rows.length; j++) {
+    html += rows[j];
+    if ((j + 1) % 4 === 0 && j !== rows.length - 1) {
+      html += '<div class="h-[2.5px] bg-slate-300/80"></div>';
     }
-  });
+  }
 
-  main.innerHTML = `
-  <section class="mt-0.5">
-    ${STATE.expandAll
-      ? `<div class="sec-head anim-fade">
-           <h2 class="text-[13px] font-semibold text-slate-500">开奖记录</h2>
-           <span class="text-[10px] text-slate-400 num">共 ${list.length} 期 · 空白 ${blanks}</span>
-         </div>`
-      : ''}
-    <div class="bg-white rounded-xl overflow-hidden shadow-sm">
-      ${html.join('')}
-    </div>
-    <div class="flex items-center justify-center gap-4 mt-1.5">
-      <button id="btnCopy" class="text-[10px] text-slate-400 underline">复制最新一期</button>
-      <span class="text-[10px] text-slate-300">圈 ${STATE.circled.size} · 线 ${STATE.links.length}</span>
-    </div>
-  </section>`;
+  main.innerHTML =
+    '<section class="mt-0.5">' +
+      (STATE.expandAll
+        ? '<div class="sec-head anim-fade"><h2 class="text-[13px] font-semibold text-slate-500">开奖记录</h2>' +
+          '<span class="text-[10px] text-slate-400 num">共 ' + n + ' 期 · 空白 ' + blanks + '</span></div>'
+        : '') +
+      '<div class="bg-white rounded-xl overflow-hidden shadow-sm">' + html + '</div>' +
+      '<div class="flex items-center justify-center gap-4 mt-1.5">' +
+        '<button id="btnCopy" class="text-[10px] text-slate-400 underline">复制最新一期</button>' +
+        '<span class="text-[10px] text-slate-300">圈 ' + STATE.circled.size + ' · 线 ' + STATE.links.length + '</span>' +
+      '</div>' +
+    '</section>';
 
-  const copyBtn = $('btnCopy');
-  if (copyBtn) copyBtn.onclick = () => copyLatest(latest);
+  var copyBtn = $('btnCopy');
+  if (copyBtn) copyBtn.onclick = function () { copyLatest(latest); };
 
   drawLinks();
   updateScrollBar();
 }
 
-async function copyLatest(it) {
-  const codes = STATE.hideTail ? it.codes.slice(0, BIG_N) : it.codes;
-  const text = `${NAMES[STATE.game]} 第${it.issue}期 ${it.date}\n${codes.join(' ')}`;
-  try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-    } else {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      ta.remove();
-    }
-    toast('已复制');
-  } catch (e) {
-    toast('复制失败，请长按选择');
+function copyLatest(it) {
+  var codes = STATE.hideTail ? it.codes.slice(0, BIG_N) : it.codes;
+  var text = NAMES[STATE.game] + ' 第' + it.issue + '期 ' + it.date + '\n' + codes.join(' ');
+
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); toast('已复制'); }
+    catch (e) { toast('复制失败，请长按选择'); }
+    ta.parentNode.removeChild(ta);
+  }
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(function () { toast('已复制'); }, fallback);
+  } else {
+    fallback();
   }
 }
 
-/* ---------- 数据获取：手机直连 → 线上 data.json → 本地快照 ---------- */
+/* ---------- 抓数据 ---------- */
 function withTimeout(promise, ms) {
   return Promise.race([
     promise,
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+    new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout')); }, ms); })
   ]);
 }
 
-async function fetchDirect() {
-  const out = { qxc: [], pl5: [], updatedAt: new Date().toISOString() };
-  let any = false;
+function fetchDirect() {
+  var out = { qxc: [], pl5: [], updatedAt: new Date().toISOString() };
+  var any = false;
 
-  for (const g of DIRECT_SRC) {
-    let got = null;
-    for (const code of g.codes) {
-      try {
-        const res = await withTimeout(fetch(XML_BASE + code + '/list.xml', { cache: 'no-store' }), 12000);
-        if (!res.ok) continue;
-        const text = await res.text();
-        const items = parseXmlRows(text, g.len).slice(0, 30);
-        if (items.length) { got = items; break; }
-      } catch (e) {}
+  function oneGame(g) {
+    var idx = 0;
+    function nextCode() {
+      if (idx >= g.codes.length) return Promise.resolve(null);
+      var code = g.codes[idx++];
+      var url = XML_BASE + code + '/list.xml';
+      return withTimeout(fetch(url, { cache: 'no-store' }), 12000).then(function (res) {
+        if (!res.ok) return nextCode();
+        return res.text().then(function (text) {
+          var items = parseXmlRows(text, g.len).slice(0, 30);
+          if (items.length) return items;
+          return nextCode();
+        });
+      }, function () { return nextCode(); });
     }
-    if (got) { out[g.key] = got; any = true; }
+    return nextCode();
   }
-  return any ? out : null;
+
+  var chain = Promise.resolve();
+  DIRECT_SRC.forEach(function (g) {
+    chain = chain.then(function () {
+      return oneGame(g).then(function (items) {
+        if (items && items.length) { out[g.key] = items; any = true; }
+      });
+    });
+  });
+
+  return chain.then(function () { return any ? out : null; });
 }
 
 function normalize(json) {
-  const remote = { qxc: [], pl5: [], updatedAt: json.updatedAt || new Date().toISOString() };
-  ['qxc', 'pl5'].forEach(k => {
-    const arr = Array.isArray(json[k]) ? json[k] : [];
-    arr.forEach(it => {
-      const codes = toCodes(it.codes ?? it.result ?? it.code ?? it.numbers, LENS[k]);
-      const issue = String(it.issue ?? it.qihao ?? '').trim();
-      if (!codes || !issue) return;
-      remote[k].push({ issue, date: String(it.date ?? '').slice(0, 10), codes });
-    });
+  var remote = { qxc: [], pl5: [], updatedAt: json.updatedAt || new Date().toISOString() };
+  ['qxc', 'pl5'].forEach(function (k) {
+    var arr = Array.isArray(json[k]) ? json[k] : [];
+    for (var i = 0; i < arr.length; i++) {
+      var it = arr[i];
+      var raw = it.codes || it.result || it.code || it.numbers;
+      var codes = toCodes(raw, LENS[k]);
+      var issue = String(it.issue || it.qihao || '').trim();
+      if (!codes || !issue) continue;
+      remote[k].push({ issue: issue, date: String(it.date || '').slice(0, 10), codes: codes });
+    }
   });
   return remote;
 }
 
 function readCache() {
   try {
-    const raw = localStorage.getItem(LS_CACHE);
+    var raw = localStorage.getItem(LS_CACHE);
     if (!raw) return null;
-    const j = JSON.parse(raw);
-    return normalize(j);
-  } catch (e) { return null; }
-}
-function writeCache(remote) {
-  try { localStorage.setItem(LS_CACHE, JSON.stringify(remote)); } catch (e) {}
-}
-
-async function loadRemote() {
-  STATE.loading = true;
-  STATE.error = '';
-  render();
-
-  // ① 手机直连抓取
-  try {
-    const direct = await fetchDirect();
-    if (direct) {
-      STATE.remote = direct;
-      STATE.source = '手机直连';
-      writeCache(direct);
-      STATE.loading = false;
-      render();
-      return;
-    }
-  } catch (e) {}
-
-  // ② 线上 data.json
-  try {
-    const res = await withTimeout(fetch(REMOTE_DATA + '?v=' + Date.now(), { cache: 'no-store' }), 12000);
-    if (res.ok) {
-      const j = await res.json();
-      if (j && (Array.isArray(j.qxc) || Array.isArray(j.pl5))) {
-        STATE.remote = normalize(j);
-        STATE.source = '线上';
-        writeCache(STATE.remote);
-        STATE.loading = false;
-        render();
-        return;
-      }
-    }
-  } catch (e) {}
-
-  // ③ 本地 ./data.json（APK 包内）
-  try {
-    const res = await withTimeout(fetch('./data.json?v=' + Date.now(), { cache: 'no-store' }), 8000);
-    if (res.ok) {
-      const j = await res.json();
-      if (j && (Array.isArray(j.qxc) || Array.isArray(j.pl5))) {
-        STATE.remote = normalize(j);
-        STATE.source = '包内快照';
-        STATE.loading = false;
-        render();
-        return;
-      }
-    }
-  } catch (e) {}
-
-  // ④ 上次缓存的快照
-  const cache = readCache();
-  if (cache) {
-    STATE.remote = cache;
-    STATE.source = '本地缓存';
-    STATE.error = '网络不通，显示上次数据';
-  } else {
-    STATE.error = '连不上数据源，请检查网络';
-  }
-  STATE.loading = false;
-  render();
-}
-
-/* ---------- 事件 ---------- */
-document.querySelectorAll('.tab').forEach(b => {
-  b.onclick = () => {
-    if (ST
+    return normalize(JSON.parse(raw));
