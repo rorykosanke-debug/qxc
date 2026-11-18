@@ -1,0 +1,157 @@
+name: 定时抓取开奖数据
+
+on:
+  schedule:
+    - cron: '0 13 * * *'    # 北京 21:00
+    - cron: '30 13 * * *'   # 北京 21:30
+    - cron: '50 13 * * *'   # 北京 21:50
+    - cron: '0 14 * * *'    # 北京 22:00
+    - cron: '40 14 * * *'   # 北京 22:40
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fetch-qxc
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 抓取并写入 data.json
+        run: |
+          cat > fetch-inline.js <<'JS'
+          const fs = require('fs');
+
+          const SRC = {
+            qxc: ['https://kaijiang.500.com/static/info/kaijiang/xml/qxc/list.xml'],
+            plw: ['https://kaijiang.500.com/static/info/kaijiang/xml/plw/list.xml',
+                  'https://kaijiang.500.com/static/info/kaijiang/xml/pl5/list.xml']
+          };
+
+          const PROXY = [
+            u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+            u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u)
+          ];
+
+          const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+          async function fetchText(url) {
+            const res = await fetch(url, {
+              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const buf = Buffer.from(await res.arrayBuffer());
+            return new TextDecoder('gbk').decode(buf);
+          }
+
+          async function grab(url) {
+            for (let i = 0; i < 3; i++) {
+              try { return await fetchText(url); }
+              catch (e) { console.log('  重试' + (i + 1) + '：' + e.message); await sleep(1500); }
+            }
+            for (const p of PROXY) {
+              try { console.log('  改走代理'); return await fetchText(p(url)); }
+              catch (e) { console.log('  代理失败：' + e.message); }
+            }
+            throw new Error('全部失败');
+          }
+
+          function parse(xml, want) {
+            const out = [];
+            const chunks = xml.split(/<row\b/i).slice(1);
+
+            for (const chunk of chunks) {
+              const gt = chunk.indexOf('>');
+              if (gt < 0) continue;
+              const head = chunk.slice(0, gt);
+              let body = chunk.slice(gt + 1);
+              const end = body.search(/<\/row>/i);
+              if (end >= 0) body = body.slice(0, end);
+
+              const get = name => {
+                let m = head.match(new RegExp(name + '\\s*=\\s*"([^"]*)"', 'i'));
+                if (!m) m = head.match(new RegExp(name + "\\s*=\\s*'([^']*)'", 'i'));
+                if (m) return m[1];
+                m = body.match(new RegExp('<' + name + '[^>]*>\\s*([^<]*?)\\s*<\\/' + name + '>', 'i'));
+                return m ? m[1] : '';
+              };
+
+              const expect = get('expect') || get('issue');
+              const date = get('opendate') || get('date');
+              const code = get('opencode') || get('code');
+              if (!expect || !code) continue;
+
+              const nums = code.replace(/[^0-9]+/g, ' ').trim().split(/\s+/)
+                .map(s => s.slice(-1)).filter(s => s !== '');
+
+              if (nums.length !== want) continue;
+
+              out.push({
+                expect: String(expect).replace(/[^0-9]/g, ''),
+                opendate: date,
+                opencode: nums.join(' ')
+              });
+            }
+
+            const map = {};
+            out.forEach(r => { map[r.expect] = r; });
+            const list = Object.keys(map).map(k => map[k]);
+            list.sort((a, b) => Number(a.expect) - Number(b.expect));
+            return list.slice(-30);
+          }
+
+          (async () => {
+            const old = (() => { try { return JSON.parse(fs.readFileSync('data.json', 'utf8')); } catch (e) { return {}; } })();
+            const result = { updated: new Date().toISOString() };
+
+            for (const type of ['qxc', 'plw']) {
+              const want = type === 'qxc' ? 7 : 5;
+              let rows = [];
+              for (const url of SRC[type]) {
+                try {
+                  console.log('抓取 ' + type + ' → ' + url);
+                  const xml = await grab(url);
+                  rows = parse(xml, want);
+                  console.log('  解析到 ' + rows.length + ' 期');
+                  if (rows.length >= 10) break;
+                } catch (e) {
+                  console.log('  失败：' + e.message);
+                }
+              }
+              if (rows.length >= 10) {
+                result[type] = rows;
+              } else {
+                console.log('  ' + type + ' 数据不足，保留旧数据');
+                result[type] = Array.isArray(old[type]) ? old[type] : [];
+              }
+            }
+
+            fs.writeFileSync('data.json', JSON.stringify(result, null, 1));
+            console.log('写入完成：七星彩 ' + result.qxc.length + ' 期，排列五 ' + result.plw.length + ' 期');
+          })().catch(e => { console.error(e); process.exit(1); });
+          JS
+          node fetch-inline.js
+
+      - name: 提交 data.json
+        run: |
+          git config user.name "qxc-bot"
+          git config user.email "actions@github.com"
+          if [ -n "$(git status --porcelain data.json)" ]; then
+            git add data.json
+            git commit -m "chore: 更新开奖数据 $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git push
+          else
+            echo "data.json 没有变化"
+          fi
