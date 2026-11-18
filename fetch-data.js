@@ -1,4 +1,4 @@
-// fetch-data.js —— 多数据源容错版（直连 567 被拦时自动换代理/换站点）
+// fetch-data.js —— 多地址探测版：谁通用谁
 const fs = require('fs');
 const path = require('path');
 
@@ -6,26 +6,52 @@ const OUT_FILE = path.join(__dirname, 'data.json');
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 const GAMES = [
-  { key: 'qxc', name: '七星彩', len: 7, gameNo: '04',     site500: 'qxc' },
-  { key: 'pl5', name: '排列五', len: 5, gameNo: '350133', site500: 'plw' }
+  { key: 'qxc', name: '七星彩', len: 7, gameNo: '04',     site: 'qxc' },
+  { key: 'pl5', name: '排列五', len: 5, gameNo: '350133', site: 'plw' }
 ];
 
 const BASE_HEADERS = {
   'User-Agent': UA,
-  'Accept': 'application/json, text/javascript, */*; q=0.01',
+  'Accept': '*/*',
   'Accept-Language': 'zh-CN,zh;q=0.9'
 };
 
-function apiUrl(gameNo, pageSize = 30, pageNo = 1) {
+function apiUrl(gameNo) {
   return 'https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry'
-    + `?gameNo=${gameNo}&provinceId=0&pageSize=${pageSize}&isVerify=1&pageNo=${pageNo}`;
+    + `?gameNo=${gameNo}&provinceId=0&pageSize=30&isVerify=1&pageNo=1`;
 }
 
-async function getText(url, extraHeaders = {}) {
-  const res = await fetch(url, { headers: { ...BASE_HEADERS, ...extraHeaders }, redirect: 'follow' });
+/* ---------- 请求 ---------- */
+async function grab(url, headers = {}) {
+  const res = await fetch(url, {
+    headers: { ...BASE_HEADERS, ...headers },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(20000)
+  });
   const text = await res.text();
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return text;
+  return { status: res.status, ok: res.ok, text };
+}
+
+/* ---------- 解析工具 ---------- */
+function toCodes(raw, len) {
+  const s = Array.isArray(raw) ? raw.join(' ') : String(raw == null ? '' : raw);
+  const tokens = s.split(/[\s,，、+|]+/).filter(Boolean);
+  if (tokens.length === len && tokens.every(t => /^\d$/.test(t))) return tokens;
+  const digits = s.replace(/\D/g, '');
+  if (digits.length < len) return null;
+  return digits.slice(0, len).split('');
+}
+
+function attrOf(tag, name) {
+  const m = tag.match(new RegExp(name + '\\s*=\\s*["\']([^"\']*)["\']', 'i'));
+  return m ? m[1].trim() : '';
+}
+
+function dedupeSort(list) {
+  const seen = new Set();
+  return list
+    .filter(x => (seen.has(x.issue) ? false : (seen.add(x.issue), true)))
+    .sort((a, b) => Number(b.issue) - Number(a.issue));
 }
 
 function pickList(json) {
@@ -34,96 +60,94 @@ function pickList(json) {
   return [];
 }
 
-function toCodes(raw, len) {
-  const s = Array.isArray(raw) ? raw.join(' ') : String(raw == null ? '' : raw);
-  const tokens = s.split(/[\s,，、+]+/).filter(Boolean);
-  if (tokens.length === len && tokens.every(t => /^\d$/.test(t))) return tokens;
-  const digits = s.replace(/\D/g, '');
-  if (digits.length < len) return null;
-  return digits.slice(0, len).split('');
-}
-
-function mapItems(list, len) {
+function mapApiItems(list, len) {
   const out = [];
-  const seen = new Set();
   for (const it of list) {
-    const issue = String(it.lotteryDrawNum ?? it.issue ?? it.qihao ?? it.code ?? '').trim();
-    const date = String(it.lotteryDrawTime ?? it.date ?? it.openTime ?? '').slice(0, 10);
-    const codes = toCodes(it.lotteryDrawResult ?? it.result ?? it.codes ?? it.openCode, len);
-    if (!issue || !codes || seen.has(issue)) continue;
-    seen.add(issue);
-    out.push({ issue, date, codes });
+    const issue = String(it.lotteryDrawNum ?? it.issue ?? it.qihao ?? '').trim();
+    const date = String(it.lotteryDrawTime ?? it.date ?? '').slice(0, 10);
+    const codes = toCodes(it.lotteryDrawResult ?? it.result ?? it.codes, len);
+    if (issue && codes && date) out.push({ issue, date, codes });
   }
-  return out.sort((a, b) => Number(b.issue) - Number(a.issue));
+  return dedupeSort(out);
 }
 
-/* ---------- 数据源 1：体彩接口（直连 + 3 个公共代理） ---------- */
-function apiSources(gameNo) {
-  const u = apiUrl(gameNo);
-  return [
-    { name: '体彩直连', url: u, headers: { 'Referer': 'https://static.sporttery.cn/' } },
-    { name: '代理A', url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u), headers: {} },
-    { name: '代理B', url: 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u), headers: {} },
-    { name: '代理C', url: 'https://corsproxy.io/?url=' + encodeURIComponent(u), headers: {} }
-  ];
-}
+/* 三种格式一次全试：JSON / XML(row 标签) / HTML 表格 */
+function parseAny(text, len) {
+  const t = String(text || '').trim();
 
-/* ---------- 数据源 2：500.com 历史页（HTML 表格） ---------- */
-async function from500(game) {
-  const url = `https://datachart.500.com/${game.site500}/history/newinc/history.php?limit=50&sort=0`;
-  const html = await getText(url, { 'Referer': `https://datachart.500.com/${game.site500}/` });
-  const rows = html.match(/<tr[\s\S]*?<\/tr>/gi) || [];
-  const out = [];
+  if (t.startsWith('{') || t.startsWith('[')) {
+    try {
+      const items = mapApiItems(pickList(JSON.parse(t)), len);
+      if (items.length) return items;
+    } catch (e) {}
+  }
+
+  const xml = [];
+  const rowRe = /<row\b[^>]*>/gi;
+  let m;
+  while ((m = rowRe.exec(t))) {
+    const tag = m[0];
+    const issue = attrOf(tag, 'expect') || attrOf(tag, 'issue') || attrOf(tag, 'lotterydrawnum');
+    const date = (attrOf(tag, 'opendate') || attrOf(tag, 'date') || attrOf(tag, 'lotterydrawtime')).slice(0, 10);
+    const codes = toCodes(attrOf(tag, 'opencode') || attrOf(tag, 'code') || attrOf(tag, 'lotterydrawresult'), len);
+    if (issue && date && codes) xml.push({ issue, date, codes });
+  }
+  if (xml.length) return dedupeSort(xml);
+
+  const rows = t.match(/<tr[\s\S]*?<\/tr>/gi) || [];
+  const html = [];
   for (const row of rows) {
     const tds = (row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) || [])
       .map(td => td.replace(/<[^>]+>/g, '').trim());
     if (tds.length < 2) continue;
-    const issue = tds[0];
-    if (!/^\d{3,10}$/.test(issue)) continue;
+    if (!/^\d{3,10}$/.test(tds[0])) continue;
     const dateMatch = row.match(/\d{4}-\d{2}-\d{2}/);
     if (!dateMatch) continue;
-    const single = tds.filter(t => /^\d$/.test(t));
-    const codes = single.length >= game.len
-      ? single.slice(0, game.len)
-      : toCodes(tds.slice(1).join(' '), game.len);
-    if (!codes) continue;
-    out.push({ issue, date: dateMatch[0], codes });
+    const single = tds.filter(x => /^\d$/.test(x));
+    const codes = single.length >= len ? single.slice(0, len) : toCodes(tds.slice(1).join(' '), len);
+    if (codes) html.push({ issue: tds[0], date: dateMatch[0], codes });
   }
-  const seen = new Set();
-  return out
-    .filter(x => (seen.has(x.issue) ? false : (seen.add(x.issue), true)))
-    .sort((a, b) => Number(b.issue) - Number(a.issue));
+  return dedupeSort(html);
 }
 
-async function fetchGame(g) {
-  for (const s of apiSources(g.gameNo)) {
+/* ---------- 每个彩种的候选地址 ---------- */
+function candidates(game) {
+  const list = [
+    { name: '体彩官网', url: apiUrl(game.gameNo), headers: { Referer: 'https://static.sporttery.cn/' } }
+  ];
+
+  const xmlCodes = game.key === 'qxc' ? ['qxc'] : ['plw', 'pl5', 'p5'];
+  for (const c of xmlCodes) {
+    list.push({ name: `500XML-${c}`, url: `https://kaijiang.500.com/static/info/kaijiang/xml/${c}/list.xml` });
+  }
+
+  list.push({ name: '500历史页', url: `https://datachart.500.com/${game.site}/history/newinc/history.php?limit=50&sort=0`, headers: { Referer: `https://datachart.500.com/${game.site}/` } });
+  list.push({ name: '500开奖页', url: `https://kaijiang.500.com/${game.site}.shtml` });
+  return list;
+}
+
+async function fetchGame(game) {
+  for (const src of candidates(game)) {
     try {
-      const json = JSON.parse(await getText(s.url, s.headers));
-      const items = mapItems(pickList(json), g.len).slice(0, 30);
+      const r = await grab(src.url, src.headers);
+      if (!r.ok) {
+        console.warn(`· ${game.name}｜${src.name} → HTTP ${r.status}`);
+        continue;
+      }
+      const items = parseAny(r.text, game.len).slice(0, 30);
       if (items.length) {
-        console.log(`✓ ${g.name}：${s.name} 取到 ${items.length} 期，最新第 ${items[0].issue} 期`);
+        console.log(`✓ ${game.name}｜${src.name} → ${items.length} 期，最新第 ${items[0].issue} 期（${items[0].date}）`);
         return items;
       }
-      console.warn(`· ${g.name}：${s.name} 返回空列表`);
+      console.warn(`· ${game.name}｜${src.name} → HTTP 200 但没解析出数据（长度 ${r.text.length}）`);
     } catch (e) {
-      console.warn(`· ${g.name}：${s.name} 失败（${e.message}）`);
+      console.warn(`· ${game.name}｜${src.name} → ${e.message}`);
     }
   }
-
-  try {
-    const items = await from500(g).then(list => list.slice(0, 30));
-    if (items.length) {
-      console.log(`✓ ${g.name}：500.com 取到 ${items.length} 期，最新第 ${items[0].issue} 期`);
-      return items;
-    }
-    console.warn(`· ${g.name}：500.com 页面没解析出数据`);
-  } catch (e) {
-    console.warn(`· ${g.name}：500.com 失败（${e.message}）`);
-  }
-
   return null;
 }
 
+/* ---------- 主流程 ---------- */
 (async () => {
   let old = {};
   try { old = JSON.parse(fs.readFileSync(OUT_FILE, 'utf8')); } catch (e) {}
@@ -146,7 +170,7 @@ async function fetchGame(g) {
   }
 
   if (!hasAny) {
-    console.error('所有数据源都失败，且没有历史数据，不覆盖 data.json');
+    console.error('所有地址都失败，且没有历史数据，不覆盖 data.json');
     process.exit(1);
   }
   if (!gotNew) {
