@@ -17,33 +17,34 @@
     --ring-color:#e11d48;
   }
 
-  .balls{display:flex;align-items:center;justify-content:center;gap:4px}
+  .balls{display:flex;align-items:center;justify-content:center;gap:3px}
 
+  /* 号码球：紧凑尺寸，一屏看约 15 期 */
   .ball{
     position:relative;
-    flex:0 0 auto;width:13%;
-    height:58px;border-radius:14px;
-    --ring-size:54px;
+    flex:0 0 auto;width:12.5%;
+    height:38px;border-radius:10px;
+    --ring-size:34px;
 
     display:flex;align-items:center;justify-content:center;
     background:var(--ball-bg);color:var(--ball-fg);
 
     font-family:ui-rounded,"SF Pro Rounded","Segoe UI Variable","Segoe UI","PingFang SC",system-ui,sans-serif;
-    font-weight:700;font-size:30px;line-height:1;letter-spacing:0;
+    font-weight:700;font-size:21px;line-height:1;letter-spacing:0;
     font-variant-numeric:tabular-nums;
 
     transition:background .18s ease, color .18s ease, width .16s ease, height .16s ease, font-size .16s ease;
     touch-action:manipulation;
   }
   .ball.xs{
-    width:6.6%;height:42px;border-radius:9px;
-    --ring-size:38px;
-    font-size:14px;
+    width:6.4%;height:30px;border-radius:7px;
+    --ring-size:26px;
+    font-size:12px;
   }
   .ball.zoom{
-    width:19%;height:64px;border-radius:15px;
-    --ring-size:60px;
-    font-size:34px;
+    width:18%;height:44px;border-radius:11px;
+    --ring-size:40px;
+    font-size:26px;
   }
 
   /* 正圆标记 */
@@ -53,7 +54,7 @@
     left:50%;top:50%;
     width:var(--ring-size);height:var(--ring-size);
     margin:calc(var(--ring-size) / -2) 0 0 calc(var(--ring-size) / -2);
-    border:2.5px solid var(--ring-color);
+    border:2px solid var(--ring-color);
     border-radius:50%;
     pointer-events:none;
   }
@@ -63,7 +64,7 @@
     position:absolute;left:50%;top:50%;
     width:var(--ring-size);height:var(--ring-size);
     margin:calc(var(--ring-size) / -2) 0 0 calc(var(--ring-size) / -2);
-    border:2px dashed var(--ring-color);
+    border:1.8px dashed var(--ring-color);
     border-radius:50%;
     opacity:.55;
     pointer-events:none;
@@ -71,9 +72,9 @@
 
   .caret{
     display:flex;align-items:center;justify-content:center;
-    width:20px;height:20px;border-radius:9999px;
+    width:18px;height:18px;border-radius:9999px;
     background:#ecfdf5;color:#059669;
-    font-size:12px;font-weight:900;line-height:1;
+    font-size:11px;font-weight:900;line-height:1;
     transition:transform .18s ease, background .18s ease;
     z-index:1;
   }
@@ -81,13 +82,13 @@
 
   .fold{
     display:flex;align-items:center;justify-content:center;
-    width:32px;height:32px;border-radius:9999px;
+    width:30px;height:30px;border-radius:9999px;
     background:#fff;color:#64748b;
-    font-size:13px;font-weight:900;line-height:1;
+    font-size:12px;font-weight:900;line-height:1;
     box-shadow:0 1px 2px rgba(0,0,0,.06);
   }
 
-  .sec-head{display:flex;align-items:baseline;gap:2px;padding:0 4px;margin-bottom:4px}
+  .sec-head{display:flex;align-items:baseline;gap:2px;padding:0 4px;margin-bottom:3px}
 
   @keyframes pop{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
   @keyframes fadein{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:none}}
@@ -98,36 +99,36 @@
 </head>
 <body class="bg-slate-100 text-slate-900">
 
-<div class="mx-auto w-full max-w-[520px] pb-10">
+<div class="mx-auto w-full max-w-[520px] pb-6">
 
-  <header class="px-4 pt-3 pb-1">
+  <header class="px-3 pt-2 pb-1">
     <div id="headerAll">
       <div class="flex items-center justify-between gap-2">
-        <h1 class="text-[22px] font-extrabold tracking-tight">开奖号码</h1>
-        <div class="flex items-center gap-1.5">
+        <h1 class="text-[19px] font-extrabold tracking-tight">开奖号码</h1>
+        <div class="flex items-center gap-1">
           <button id="btnColor" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="数字颜色">
-            <span id="colorDot" class="w-4 h-4 rounded-full" style="background:#e11d48"></span>
+            <span id="colorDot" class="w-3.5 h-3.5 rounded-full" style="background:#e11d48"></span>
           </button>
           <button id="btnRing" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="圆圈颜色">
-            <span id="ringDot" class="w-4 h-4 rounded-full" style="border:2.5px solid #e11d48"></span>
+            <span id="ringDot" class="w-3.5 h-3.5 rounded-full" style="border:2px solid #e11d48"></span>
           </button>
-          <button id="btnTail" class="h-8 px-3 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm active:scale-95 transition">
+          <button id="btnTail" class="h-8 px-2.5 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm active:scale-95 transition">
             <span id="tailLabel">7位</span>
           </button>
           <button id="btnFold" class="fold" aria-label="收起">⌃</button>
-          <button id="btnRefresh" class="px-4 py-2 rounded-full bg-white text-slate-600 text-sm font-medium shadow-sm active:scale-95 transition">刷新</button>
+          <button id="btnRefresh" class="px-3 py-1.5 rounded-full bg-white text-slate-600 text-[13px] font-medium shadow-sm active:scale-95 transition">刷新</button>
         </div>
       </div>
 
-      <div class="mt-3 grid grid-cols-2 gap-2.5">
+      <div class="mt-2 grid grid-cols-2 gap-2">
         <button data-game="qxc" class="tab"></button>
         <button data-game="pl5" class="tab"></button>
       </div>
 
-      <p id="statusLine" class="mt-2 mb-1.5 text-[11px] text-slate-400 min-h-[15px]"></p>
+      <p id="statusLine" class="mt-1.5 mb-1 text-[10px] text-slate-400 min-h-[13px]"></p>
     </div>
 
-    <div id="foldBar" class="hidden items-center justify-end gap-1.5 py-1">
+    <div id="foldBar" class="hidden items-center justify-end gap-1 py-1">
       <button id="btnColor2" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="数字颜色">
         <span id="colorDot2" class="w-3.5 h-3.5 rounded-full" style="background:#e11d48"></span>
       </button>
@@ -141,15 +142,15 @@
     </div>
   </header>
 
-  <main id="main" class="px-4"></main>
+  <main id="main" class="px-3"></main>
 
-  <p class="px-5 mt-4 mb-4 text-[11px] leading-relaxed text-slate-400">
+  <p class="px-4 mt-2.5 mb-2 text-[10px] leading-relaxed text-slate-400">
     数据每天 21:00 · 21:30 · 21:50 · 22:00 · 22:40 自动更新（北京时间）。<br>
-    点数字出圆圈；长按数字拖到另一个数字上可连线。
+    最新一期在最下方；点数字出圆圈，长按可拖拽连线。
   </p>
 </div>
 
-<div id="toast" class="fixed left-1/2 -translate-x-1/2 top-4 z-50 hidden"></div>
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 top-3 z-50 hidden"></div>
 
 <script>
 const NAMES = { qxc: '七星彩', pl5: '排列五' };
@@ -180,8 +181,8 @@ const RING_COLORS = [
   { name:'灰',   c:'#64748b' }
 ];
 
-const TAB_ON  = 'tab h-12 rounded-2xl font-bold text-base bg-rose-600 text-white shadow-lg shadow-rose-600/25 active:scale-[.98] transition';
-const TAB_OFF = 'tab h-12 rounded-2xl font-bold text-base bg-white text-slate-500 active:scale-[.98] transition';
+const TAB_ON  = 'tab h-10 rounded-xl font-bold text-[15px] bg-rose-600 text-white shadow-lg shadow-rose-600/25 active:scale-[.98] transition';
+const TAB_OFF = 'tab h-10 rounded-xl font-bold text-[15px] bg-white text-slate-500 active:scale-[.98] transition';
 
 const STATE = {
   game: 'qxc',
@@ -192,7 +193,7 @@ const STATE = {
   expandAll: false,
   hideTail: false,
   colorIdx: 0,
-  ringIdx: -1,          // -1 表示跟随数字颜色
+  ringIdx: -1,
   circled: new Set(),
   links: []
 };
@@ -200,7 +201,6 @@ const STATE = {
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-/* ---------- 号码球 ---------- */
 function ballsHtml(it, mode) {
   const codes = it.codes;
   const shown = STATE.hideTail ? codes.slice(0, BIG_N) : codes;
@@ -216,7 +216,6 @@ function ballsHtml(it, mode) {
   return `<div class="${wrap}">${inner}</div>`;
 }
 
-/* ---------- 配色 ---------- */
 function applyPalette(idx) {
   const p = PALETTES[idx % PALETTES.length];
   const root = document.documentElement.style;
@@ -231,7 +230,7 @@ function applyPalette(idx) {
 
 function ringColor() {
   if (STATE.ringIdx >= 0) return RING_COLORS[STATE.ringIdx % RING_COLORS.length].c;
-  return PALETTES[STATE.colorIdx % PALETTES.length].fg;   // 未指定时跟随数字颜色
+  return PALETTES[STATE.colorIdx % PALETTES.length].fg;
 }
 
 function applyRing() {
@@ -252,7 +251,7 @@ function loadColors() {
     if (r !== null && r !== '') ri = parseInt(r, 10);
   } catch (e) {}
   STATE.colorIdx = ci % PALETTES.length;
-  STATE.ringIdx = (ri === undefined || isNaN(ri)) ? -1 : (ri < 0 ? -1 : ri % RING_COLORS.length);
+  STATE.ringIdx = (isNaN(ri) || ri < 0) ? -1 : ri % RING_COLORS.length;
   applyPalette(STATE.colorIdx);
 }
 
@@ -270,7 +269,6 @@ function saveTail() {
   try { localStorage.setItem(LS_TAIL, STATE.hideTail ? '1' : '0'); } catch (e) {}
 }
 
-/* ---------- 号码解析 ---------- */
 function toCodes(raw, len) {
   let s = Array.isArray(raw) ? raw.join(' ') : String(raw == null ? '' : raw);
   const tokens = s.split(/[\s,，、+]+/).filter(Boolean);
@@ -281,7 +279,7 @@ function toCodes(raw, len) {
 }
 
 function listFor(game) {
-  return [...STATE.remote[game]].sort((a, b) => (Number(b.issue) || 0) - (Number(a.issue) || 0));
+  return [...STATE.remote[game]].sort((a, b) => (Number(a.issue) || 0) - (Number(b.issue) || 0));
 }
 
 const pad = n => String(n).padStart(2, '0');
@@ -293,10 +291,10 @@ function fmtTime(iso) {
 let toastTimer;
 function toast(msg) {
   const t = $('toast');
-  t.innerHTML = `<div class="anim-pop px-4 py-2.5 rounded-full bg-slate-900/90 text-white text-sm shadow-lg">${esc(msg)}</div>`;
+  t.innerHTML = `<div class="anim-pop px-3 py-2 rounded-full bg-slate-900/90 text-white text-[13px] shadow-lg">${esc(msg)}</div>`;
   t.classList.remove('hidden');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.add('hidden'), 1600);
+  toastTimer = setTimeout(() => t.classList.add('hidden'), 1500);
 }
 
 /* ---------- 连线层 ---------- */
@@ -335,7 +333,7 @@ function drawLinks() {
     line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
     line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
     line.setAttribute('stroke', color);
-    line.setAttribute('stroke-width', '2.5');
+    line.setAttribute('stroke-width', '2.2');
     line.setAttribute('stroke-linecap', 'round');
     line.setAttribute('opacity', dashed ? '0.7' : '0.9');
     if (dashed) line.setAttribute('stroke-dasharray', '6 5');
@@ -467,19 +465,19 @@ document.addEventListener('mouseup', e => { if (press.key) pressEnd(e.clientX, e
 
 window.addEventListener('resize', () => drawLinks());
 
-/* ---------- 历史行 ---------- */
+/* ---------- 单行 ---------- */
 function rowHtml(it) {
   const open = STATE.expandAll;
   const info = open
-    ? `<div class="anim-fade mb-0.5 text-[11px] leading-tight pl-1">
+    ? `<div class="anim-fade mb-0.5 text-[10px] leading-tight pl-1">
          <span class="num font-semibold text-slate-500">${esc(it.issue)}</span>
          <span class="num text-slate-300 ml-1">${esc(it.date)}</span>
        </div>`
     : '';
 
   return `<div class="relative border-t border-slate-100">
-    <button data-toggle="1" class="caret absolute left-1 top-1/2 -translate-y-1/2 ${open ? 'open' : ''}" aria-label="展开或收起全部">›</button>
-    <div class="px-4">
+    <button data-toggle="1" class="caret absolute left-0.5 top-1/2 -translate-y-1/2 ${open ? 'open' : ''}" aria-label="展开或收起全部">›</button>
+    <div class="px-3.5">
       ${info}
       ${ballsHtml(it, 'list')}
     </div>
@@ -506,20 +504,20 @@ function render() {
   const s = $('statusLine');
   if (STATE.error) {
     s.textContent = STATE.error;
-    s.className = 'mt-2 mb-1.5 text-[11px] text-rose-500 min-h-[15px]';
+    s.className = 'mt-1.5 mb-1 text-[10px] text-rose-500 min-h-[13px]';
   } else if (STATE.loading && !STATE.remote.updatedAt) {
     s.textContent = '正在获取数据…';
-    s.className = 'mt-2 mb-1.5 text-[11px] text-slate-400 min-h-[15px]';
+    s.className = 'mt-1.5 mb-1 text-[10px] text-slate-400 min-h-[13px]';
   } else {
     s.textContent = STATE.remote.updatedAt ? '数据更新于 ' + fmtTime(STATE.remote.updatedAt) : '';
-    s.className = 'mt-2 mb-1.5 text-[11px] text-slate-400 min-h-[15px]';
+    s.className = 'mt-1.5 mb-1 text-[10px] text-slate-400 min-h-[13px]';
   }
 
   const main = $('main');
   const list = listFor(STATE.game);
 
   if (!list.length) {
-    main.innerHTML = `<section class="bg-white rounded-3xl p-6 text-center shadow-sm">
+    main.innerHTML = `<section class="bg-white rounded-2xl p-6 text-center shadow-sm">
       <div class="text-4xl">🎯</div>
       <p class="mt-3 font-semibold">还没有${NAMES[STATE.game]}数据</p>
       <p class="mt-1.5 text-[11px] text-slate-400 leading-relaxed">
@@ -529,41 +527,33 @@ function render() {
     return;
   }
 
-  const latest = list[0];
-  const rest = list.slice(1);
+  const latest = list[list.length - 1];
 
   const rows = [];
-  rest.forEach((it, i) => {
+  list.forEach((it, i) => {
     rows.push(rowHtml(it));
-    if ((i + 1) % 4 === 0 && i !== rest.length - 1) {
-      rows.push('<div class="h-[3px] bg-slate-300/80"></div>');
+    if ((i + 1) % 4 === 0 && i !== list.length - 1) {
+      rows.push('<div class="h-[2.5px] bg-slate-300/80"></div>');
     }
   });
 
   main.innerHTML = `
-  <section class="bg-white rounded-3xl px-3 py-2.5 shadow-sm">
-    <div class="flex items-center justify-between">
-      <span class="text-[11px] text-slate-400">最新一期</span>
-      <button id="btnCopy" class="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-medium active:scale-95 transition">复制</button>
-    </div>
-    <div class="mt-1.5">${ballsHtml(latest, 'latest')}</div>
-  </section>
-
-  <section class="mt-2.5">
+  <section class="mt-0.5">
     ${STATE.expandAll
       ? `<div class="sec-head anim-fade">
-           <h2 class="text-sm font-semibold text-slate-500">历史开奖</h2>
-           <span class="text-[11px] text-slate-400 num">共 ${list.length} 期</span>
+           <h2 class="text-[13px] font-semibold text-slate-500">开奖记录</h2>
+           <span class="text-[10px] text-slate-400 num">共 ${list.length} 期</span>
          </div>`
       : ''}
-    <div class="bg-white rounded-2xl overflow-hidden shadow-sm">
-      ${rows.length
-        ? rows.join('')
-        : `<div class="py-10 text-center text-sm text-slate-400">暂无更多历史</div>`}
+    <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+      ${rows.join('')}
     </div>
-    ${STATE.links.length
-      ? `<button id="btnClearLinks" class="mt-2 mx-auto block text-[11px] text-slate-400 underline">清除连线（${STATE.links.length}）</button>`
-      : ''}
+    <div class="flex items-center justify-center gap-4 mt-1.5">
+      <button id="btnCopy" class="text-[10px] text-slate-400 underline">复制最新一期</button>
+      ${STATE.links.length
+        ? `<button id="btnClearLinks" class="text-[10px] text-slate-400 underline">清除连线（${STATE.links.length}）</button>`
+        : ''}
+    </div>
   </section>`;
 
   const copyBtn = $('btnCopy');
