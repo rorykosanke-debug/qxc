@@ -38,8 +38,7 @@
   <main id="main" class="px-4"></main>
 
   <p class="px-5 mt-6 text-[11px] leading-relaxed text-slate-400">
-    数据由 GitHub Actions 每期开奖后自动更新。<br>
-    点「刷新」会立即触发一次后台抓取。<br>
+    数据每天 09:00 · 10:00 · 21:50 · 22:40 自动更新，打开页面就是最新的。<br>
     手动录入的期号只保存在这台手机里，可随时删除。
   </p>
 </div>
@@ -51,7 +50,6 @@
   </div>
 </div>
 
-<!-- 录入面板 -->
 <div id="sheet" class="fixed inset-0 z-40 hidden">
   <div class="absolute inset-0 bg-black/40" data-close="1"></div>
   <div class="anim-up absolute inset-x-0 bottom-0 bg-white rounded-t-3xl px-5 pt-5"
@@ -66,7 +64,7 @@
              class="num w-full h-12 px-4 rounded-2xl bg-slate-100 outline-none focus:ring-2 focus:ring-rose-300">
       <label class="block text-xs text-slate-400 mb-1.5 mt-3">开奖日期</label>
       <input id="fDate" type="date"
-             class="num w-full h-12 px-4 rounded-2xl bg-slate-100 outline-none focus:ring-2 focus:ring-rose-300">
+             class="num w-full h-12 rounded-2xl bg-slate-100 outline-none focus:ring-2 focus:ring-rose-300 px-4">
       <label class="block text-xs text-slate-400 mb-1.5 mt-3">号码（按位填，自动加空格）</label>
       <input id="fCodes" inputmode="numeric"
              class="num w-full h-12 px-4 rounded-2xl bg-slate-100 outline-none focus:ring-2 focus:ring-rose-300 text-lg tracking-widest">
@@ -81,14 +79,8 @@
 <script>
 const NAMES = { qxc: '七星彩', pl5: '排列五' };
 const LENS  = { qxc: 7, pl5: 5 };
-
 const LS_MANUAL = 'lottery_manual_v1';
 const REMOTE_DATA = 'https://rorykosanke-debug.github.io/qxc/data.json';
-
-/* ====== 触发后台更新用的令牌 ====== */
-const GH_REPO  = 'rorykosanke-debug/qxc';
-const GH_TOKEN = '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';
-const GH_REF   = 'main';
 
 const TAB_ON  = 'tab h-12 rounded-2xl font-bold text-base bg-rose-600 text-white shadow-lg shadow-rose-600/25 active:scale-[.98] transition';
 const TAB_OFF = 'tab h-12 rounded-2xl font-bold text-base bg-white text-slate-500 active:scale-[.98] transition';
@@ -99,15 +91,12 @@ const STATE = {
   manual: { qxc: [], pl5: [] },
   loading: true,
   error: '',
-  pendingDelete: null,
-  running: false
+  pendingDelete: null
 };
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-/* ---------- 号码解析：严格按位数 ---------- */
 function toCodes(raw, len) {
   let s = Array.isArray(raw) ? raw.join(' ') : String(raw == null ? '' : raw);
   const tokens = s.split(/[\s,，、+]+/).filter(Boolean);
@@ -117,7 +106,6 @@ function toCodes(raw, len) {
   return digits.slice(0, len).split('');
 }
 
-/* ---------- 本地手动数据 ---------- */
 function loadManual() {
   try {
     const raw = JSON.parse(localStorage.getItem(LS_MANUAL) || '{}');
@@ -131,7 +119,6 @@ function saveManualStore() {
   } catch (e) {}
 }
 
-/* ---------- 合并 + 排序 ---------- */
 function listFor(game) {
   const map = new Map();
   STATE.remote[game].forEach(it => map.set(it.issue, it));
@@ -139,7 +126,6 @@ function listFor(game) {
   return [...map.values()].sort((a, b) => (Number(b.issue) || 0) - (Number(a.issue) || 0));
 }
 
-/* ---------- 工具 ---------- */
 const pad = n => String(n).padStart(2, '0');
 function today() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
 function shortDate(s) { const m = String(s || '').match(/(\d{1,2})-(\d{1,2})$/); return m ? `${m[1]}-${m[2]}` : (s || ''); }
@@ -154,10 +140,9 @@ function toast(msg) {
   t.innerHTML = `<div class="anim-pop px-4 py-2.5 rounded-full bg-slate-900/90 text-white text-sm shadow-lg">${esc(msg)}</div>`;
   t.classList.remove('hidden');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.add('hidden'), 2000);
+  toastTimer = setTimeout(() => t.classList.add('hidden'), 1800);
 }
 
-/* ---------- 渲染 ---------- */
 function rowHtml(it) {
   const len = LENS[STATE.game];
   const pending = STATE.pendingDelete === it.issue;
@@ -187,10 +172,7 @@ function render() {
   });
 
   const s = $('statusLine');
-  if (STATE.running) {
-    s.textContent = '后台正在抓取，稍等自动更新…';
-    s.className = 'mt-2 mb-2 text-xs text-rose-500 min-h-[16px]';
-  } else if (STATE.error) {
+  if (STATE.error) {
     s.textContent = STATE.error;
     s.className = 'mt-2 mb-2 text-xs text-rose-500 min-h-[16px]';
   } else if (STATE.loading && !STATE.remote.updatedAt) {
@@ -249,7 +231,6 @@ function render() {
   if (copyBtn) copyBtn.onclick = () => copyLatest(latest);
 }
 
-/* ---------- 复制 ---------- */
 async function copyLatest(it) {
   const text = `${NAMES[STATE.game]} 第${it.issue}期 ${it.date}\n${it.codes.join(' ')}`;
   try {
@@ -271,7 +252,6 @@ async function copyLatest(it) {
   }
 }
 
-/* ---------- 取数据：线上优先，本地兜底 ---------- */
 async function loadRemote() {
   STATE.loading = true;
   render();
@@ -318,64 +298,6 @@ async function loadRemote() {
   }
 }
 
-/* ---------- 直接调 GitHub 触发工作流 ---------- */
-async function ghApi(path, opt = {}) {
-  return fetch('https://api.github.com' + path, {
-    ...opt,
-    headers: {
-      'Authorization': 'Bearer ' + GH_TOKEN,
-      'Accept': 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      'Content-Type': 'application/json'
-    }
-  });
-}
-
-async function triggerUpdate() {
-  try {
-    const r1 = await ghApi(`/repos/${GH_REPO}/actions/workflows`);
-    if (!r1.ok) {
-      toast('触发失败：HTTP ' + r1.status);
-      console.warn(await r1.text());
-      return false;
-    }
-    const j = await r1.json();
-    const wf = (j.workflows || []).find(w => /update\.yml$/i.test(w.path || '') || w.name === '更新数据');
-    if (!wf) { toast('没找到「更新数据」工作流'); return false; }
-
-    const r2 = await ghApi(`/repos/${GH_REPO}/actions/workflows/${wf.id}/dispatches`, {
-      method: 'POST',
-      body: JSON.stringify({ ref: GH_REF })
-    });
-    if (r2.status === 204) return true;
-
-    toast('触发失败：HTTP ' + r2.status);
-    console.warn(await r2.text());
-    return false;
-  } catch (e) {
-    toast('触发失败，请检查网络');
-    return false;
-  }
-}
-
-async function pollForUpdate() {
-  const before = STATE.remote.updatedAt;
-  for (let i = 0; i < 18; i++) {
-    await sleep(10000);
-    await loadRemote();
-    if (STATE.remote.updatedAt && STATE.remote.updatedAt !== before) {
-      STATE.running = false;
-      render();
-      toast('数据已更新');
-      return;
-    }
-  }
-  STATE.running = false;
-  render();
-  toast('这次没等到新数据，稍后再试');
-}
-
-/* ---------- 录入面板 ---------- */
 function openSheet() {
   $('sheetGame').textContent = NAMES[STATE.game];
   $('fIssue').value = '';
@@ -415,7 +337,6 @@ $('btnSave').onclick = () => {
   toast('已保存第 ' + issue + ' 期');
 };
 
-/* ---------- 事件 ---------- */
 document.querySelectorAll('.tab').forEach(b => {
   b.onclick = () => {
     if (STATE.game === b.dataset.game) return;
@@ -425,17 +346,7 @@ document.querySelectorAll('.tab').forEach(b => {
   };
 });
 
-$('btnRefresh').onclick = async () => {
-  if (STATE.running) { toast('正在抓取中，请稍候'); return; }
-  toast('正在通知后台更新…');
-  const ok = await triggerUpdate();
-  if (!ok) { loadRemote(); return; }
-  STATE.running = true;
-  render();
-  toast('后台已开始抓取，稍等自动更新');
-  pollForUpdate();
-};
-
+$('btnRefresh').onclick = () => { toast('正在刷新…'); loadRemote(); };
 $('btnAdd').onclick = openSheet;
 document.querySelectorAll('[data-close]').forEach(el => { el.onclick = closeSheet; });
 
@@ -458,7 +369,6 @@ $('main').addEventListener('click', e => {
   }
 });
 
-/* ---------- 启动 ---------- */
 loadManual();
 render();
 loadRemote();
