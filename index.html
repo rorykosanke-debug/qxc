@@ -82,6 +82,9 @@ const NAMES = { qxc: '七星彩', pl5: '排列五' };
 const LENS  = { qxc: 7, pl5: 5 };
 const LS_KEY = 'lottery_manual_v1';
 
+// 线上数据地址（APK 内会优先用它，取不到再用打包时的 data.json）
+const REMOTE_DATA = 'https://rorykosanke-debug.github.io/qxc/data.json';
+
 const TAB_ON  = 'tab h-12 rounded-2xl font-bold text-base bg-rose-600 text-white shadow-lg shadow-rose-600/25 active:scale-[.98] transition';
 const TAB_OFF = 'tab h-12 rounded-2xl font-bold text-base bg-white text-slate-500 active:scale-[.98] transition';
 
@@ -258,14 +261,27 @@ async function copyLatest(it) {
   }
 }
 
-/* ---------- 抓 data.json ---------- */
+/* ---------- 取数据：先线上，再本地（APK 里就是包内快照） ---------- */
 async function loadRemote() {
   STATE.loading = true;
   render();
   try {
-    const res = await fetch('./data.json?v=' + Date.now(), { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
+    const urls = [
+      REMOTE_DATA + '?v=' + Date.now(),
+      './data.json?v=' + Date.now()
+    ];
+
+    let json = null;
+    for (const u of urls) {
+      try {
+        const res = await fetch(u, { cache: 'no-store' });
+        if (!res.ok) continue;
+        const j = await res.json();
+        if (j && (Array.isArray(j.qxc) || Array.isArray(j.pl5))) { json = j; break; }
+      } catch (e) {}
+    }
+    if (!json) throw new Error('无可用数据');
+
     const remote = { qxc: [], pl5: [], updatedAt: json.updatedAt || null };
     ['qxc', 'pl5'].forEach(k => {
       const arr = Array.isArray(json[k]) ? json[k] : [];
@@ -281,6 +297,12 @@ async function loadRemote() {
         });
       });
     });
+
+    if (!remote.qxc.length && !remote.pl5.length) {
+      const m = STATE.manual;
+      if (!m.qxc.length && !m.pl5.length) throw new Error('空数据');
+    }
+
     STATE.remote = remote;
     STATE.error = '';
   } catch (e) {
