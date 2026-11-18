@@ -2,6 +2,11 @@ name: 打包安卓 APK
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'index.html'
+      - '.github/workflows/android.yml'
 
 permissions:
   contents: write
@@ -9,60 +14,84 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-      - name: 拉取代码
+      - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 安装 JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: 安装 Node
+      - name: 准备 Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 检查自带 Android SDK
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls -1 "$ANDROID_HOME" || true
+      - name: 准备 JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: 初始化 Capacitor 工程
+      - name: 准备网页目录
         run: |
           mkdir -p www
           cp index.html www/index.html
-          if [ -f data.json ]; then cp data.json www/data.json; fi
+          if [ -f data.json ]; then cp data.json www/data.json; else echo '{}' > www/data.json; fi
+          echo "index.html 大小：$(wc -c < www/index.html) 字节"
+          sha1sum www/index.html
+
+      - name: 安装 Capacitor
+        run: |
           npm init -y
-          npm i --no-audit --no-fund @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 --no-audit --no-fund
+          npx cap --version
+
+      - name: 写入 Capacitor 配置（开启直连）
+        run: |
           cat > capacitor.config.json <<'EOF'
           {
             "appId": "com.rorykosanke.qxc",
             "appName": "开奖号码",
             "webDir": "www",
-            "server": { "androidScheme": "https" },
-            "plugins": { "CapacitorHttp": { "enabled": true } }
+            "plugins": {
+              "CapacitorHttp": {
+                "enabled": true
+              }
+            }
           }
           EOF
+          cat capacitor.config.json
+
+      - name: 生成安卓工程
+        run: |
           npx cap add android
           npx cap sync android
 
-      - name: 编译 APK
+      - name: 打包 APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - name: 整理 APK
+      - name: 改名整理
         run: |
           mkdir -p out
           cp android/app/build/outputs/apk/debug/app-debug.apk "out/kai-jiang-v${{ github.run_number }}.apk"
+          ls -lh out
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: kai-jiang-apk
+          path: out/*.apk
+          retention-days: 30
 
       - name: 发布到 Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-${{ github.run_number }}
-          name: 开奖号码 APK 第 ${{ github.run_number }} 版
-          body: 自动构建，支持手机端直连抓取数据
+          tag_name: v${{ github.run_number }}
+          name: 开奖号码 v${{ github.run_number }}
           files: out/*.apk
+          body: |
+            自动打包 · 基于提交 ${{ github.sha }}
+
+            安装：下载 kai-jiang-v${{ github.run_number }}.apk，直接覆盖安装即可。
