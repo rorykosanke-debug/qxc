@@ -1,69 +1,120 @@
+// 由 GitHub Actions 运行：抓取七星彩 / 排列五 开奖数据，写入 data.json
 const fs = require('fs');
+const path = require('path');
 
-const API = n =>
-  `https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry?gameNo=${n}&provinceId=0&pageSize=100&isVerify=1&pageNo=1`;
+const OUT_FILE = path.join(__dirname, 'data.json');
+const PAGE_SIZE = 30;
 
-const CANDIDATES = ['04', '35', '85'];
+// 每个彩种可以配多个 gameNo，会依次尝试，第一个成功的就用
+const GAMES = [
+  { key: 'qxc', name: '七星彩', len: 7, gameNos: ['04'] },
+  { key: 'pl5', name: '排列五', len: 5, gameNos: ['350133'] }
+];
 
-function classify(name, result) {
-  const s = String(name || '');
-  if (s.includes('七星')) return 'qxc';
-  if (s.includes('排列五') || s.includes('排列5')) return 'pl5';
-  if (String(result).includes('+')) return null;   // 大乐透不算
-  const n = String(result).trim().split(/\s+/).length;
-  if (n === 7) return 'qxc';
-  if (n === 5) return 'pl5';
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+function apiUrl(gameNo, pageNo = 1) {
+  return 'https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry'
+    + `?gameNo=${gameNo}&provinceId=0&pageSize=${PAGE_SIZE}&isVerify=1&pageNo=${pageNo}`;
+}
+
+async function getJson(url) {
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': UA,
+      'Referer': 'https://www.lottery.gov.cn/',
+      'Accept': 'application/json, text/plain, */*'
+    }
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+function pickList(json) {
+  const candidates = [
+    json && json.value && json.value.list,
+    json && json.list,
+    json && json.data && json.data.list,
+    json && json.data,
+    json && json.result && json.result.data
+  ];
+  for (const c of candidates) if (Array.isArray(c) && c.length) return c;
+  return [];
+}
+
+// 固定按位数切分：七星彩 7 位、排列五 5 位
+function toCodes(raw, len) {
+  const s = Array.isArray(raw) ? raw.join(' ') : String(raw == null ? '' : raw);
+  const tokens = s.split(/[\s,，、+]+/).filter(Boolean);
+  if (tokens.length === len && tokens.every(t => /^\d$/.test(t))) return tokens;
+  const digits = s.replace(/\D/g, '');
+  if (digits.length < len) return null;
+  return digits.slice(0, len).split('');
+}
+
+function mapItems(list, len) {
+  const out = [];
+  const seen = new Set();
+  for (const it of list) {
+    const issue = String(it.lotteryDrawNum ?? it.issue ?? it.qihao ?? it.code ?? '').trim();
+    const date = String(it.lotteryDrawTime ?? it.date ?? it.openTime ?? '').slice(0, 10);
+    const codes = toCodes(it.lotteryDrawResult ?? it.result ?? it.codes ?? it.openCode, len);
+    if (!issue || !codes || seen.has(issue)) continue;
+    seen.add(issue);
+    out.push({ issue, date, codes });
+  }
+  return out;
+}
+
+async function fetchGame(g) {
+  for (const gameNo of g.gameNos) {
+    try {
+      const json = await getJson(apiUrl(gameNo));
+      const items = mapItems(pickList(json), g.len).slice(0, PAGE_SIZE);
+      if (items.length) {
+        console.log(`✓ ${g.name}（gameNo=${gameNo}）取到 ${items.length} 期，最新第 ${items[0].issue} 期`);
+        return items;
+      }
+      console.warn(`· ${g.name}（gameNo=${gameNo}）返回空列表`);
+    } catch (e) {
+      console.warn(`· ${g.name}（gameNo=${gameNo}）失败：${e.message}`);
+    }
+  }
   return null;
 }
 
-const toNums = r => String(r).trim().split(/\s+/).map(x => parseInt(x, 10)).filter(n => isFinite(n));
+(async () => {
+  let old = {};
+  try { old = JSON.parse(fs.readFileSync(OUT_FILE, 'utf8')); } catch (e) {}
 
-async function main() {
-  const out = { qxc: [], pl5: [], updated: new Date().toISOString(), sources: [] };
+  const result = { updatedAt: new Date().toISOString(), qxc: [], pl5: [] };
+  let gotNew = false;
+  let hasAny = false;
 
-  for (const g of CANDIDATES) {
-    let json;
-    try {
-      const res = await fetch(API(g), {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://www.sporttery.cn/'
-        }
-      });
-      console.log(`gameNo=${g} HTTP ${res.status}`);
-      if (!res.ok) continue;
-      json = await res.json();
-    } catch (e) {
-      console.log(`gameNo=${g} 失败: ${e.message}`);
-      continue;
+  for (const g of GAMES) {
+    const fresh = await fetchGame(g);
+    if (fresh) {
+      result[g.key] = fresh;
+      gotNew = true;
+      hasAny = true;
+    } else if (Array.isArray(old[g.key]) && old[g.key].length) {
+      result[g.key] = old[g.key];
+      console.warn(`· ${g.name} 本次抓取失败，保留原有 ${old[g.key].length} 期`);
+      hasAny = true;
+    } else {
+      console.warn(`· ${g.name} 没有任何可用数据`);
     }
-
-    const list = (json && json.value && json.value.list) || [];
-    console.log(`gameNo=${g} 条数=${list.length} 名称=${list[0] ? list[0].lotteryName : '-'}`);
-    if (!list.length) continue;
-
-    for (const it of list) {
-      const key = classify(it.lotteryName, it.lotteryDrawResult || '');
-      if (!key) continue;
-      const nums = toNums(it.lotteryDrawResult);
-      if (nums.length !== (key === 'qxc' ? 7 : 5)) continue;
-      out[key].push({
-        issue: String(it.lotteryDrawNum || ''),
-        date: String(it.lotteryDrawTime || '').slice(0, 10),
-        nums
-      });
-    }
-    out.sources.push({ gameNo: g, count: list.length, name: list[0].lotteryName || '' });
   }
 
-  ['qxc', 'pl5'].forEach(k => {
-    const map = new Map();
-    out[k].forEach(x => { if (x.issue) map.set(x.issue, x); });
-    out[k] = [...map.values()].sort((a, b) => Number(b.issue) - Number(a.issue)).slice(0, 60);
-  });
+  if (!hasAny) {
+    console.error('两个彩种都失败，且没有历史数据，不覆盖 data.json');
+    process.exit(1);
+  }
+  if (!gotNew) {
+    console.log('本次没有拿到新数据，data.json 保持不动');
+    return;
+  }
 
-  fs.writeFileSync('data.json', JSON.stringify(out, null, 2), 'utf8');
-  console.log(`完成：七星彩 ${out.qxc.length} 期，排列五 ${out.pl5.length} 期`);
-}
-
-main().catch(e => { console.error(e); process.exit(1); });
+  fs.writeFileSync(OUT_FILE, JSON.stringify(result, null, 2) + '\n', 'utf8');
+  console.log('已写入 data.json：' + GAMES.map(g => `${g.name} ${result[g.key].length} 期`).join('，'));
+})();
