@@ -1,4 +1,4 @@
-// fetch-data.js —— v4：兼容 500.com 子标签 XML / 属性 XML / HTML 表格
+// fetch-data.js —— v5：多重试 + 代理兜底 + 错误码可读
 const fs = require('fs');
 const path = require('path');
 
@@ -6,38 +6,52 @@ const OUT_FILE = path.join(__dirname, 'data.json');
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 const GAMES = [
-  { key: 'qxc', name: '七星彩', len: 7, gameNo: '04',     site: 'qxc' },
-  { key: 'pl5', name: '排列五', len: 5, gameNo: '350133', site: 'plw' }
+  { key: 'qxc', name: '七星彩', len: 7, gameNo: '04',     site: 'qxc', xmlCodes: ['qxc'] },
+  { key: 'pl5', name: '排列五', len: 5, gameNo: '350133', site: 'plw', xmlCodes: ['plw', 'pl5'] }
 ];
 
 const BASE_HEADERS = {
   'User-Agent': UA,
   'Accept': '*/*',
-  'Accept-Language': 'zh-CN,zh;q=0.9'
+  'Accept-Language': 'zh-CN,zh;q=0.9',
+  'Connection': 'keep-alive'
 };
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function apiUrl(gameNo) {
   return 'https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry'
     + `?gameNo=${gameNo}&provinceId=0&pageSize=30&isVerify=1&pageNo=1`;
 }
 
-/* ---------- 请求（自动处理 GBK 编码） ---------- */
-async function grab(url, headers = {}) {
-  const res = await fetch(url, {
-    headers: { ...BASE_HEADERS, ...headers },
-    redirect: 'follow',
-    signal: AbortSignal.timeout(20000)
-  });
-  const buf = Buffer.from(await res.arrayBuffer());
-  let text = buf.toString('utf8');
-  const bad = (text.match(/\uFFFD/g) || []).length;
-  if (bad > 20) {
-    try { text = new TextDecoder('gbk').decode(buf); } catch (e) {}
+/* ---------- 带重试的请求 ---------- */
+async function grab(url, headers = {}, tries = 3) {
+  let lastErr = null;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(url, {
+        headers: { ...BASE_HEADERS, ...headers },
+        redirect: 'follow',
+        signal: AbortSignal.timeout(20000)
+      });
+      const buf = Buffer.from(await res.arrayBuffer());
+      let text = buf.toString('utf8');
+      if ((text.match(/\uFFFD/g) || []).length > 20) {
+        try { text = new TextDecoder('gbk').decode(buf); } catch (e) {}
+      }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return text;
+    } catch (e) {
+      lastErr = e;
+      const code = (e.cause && e.cause.code) ? e.cause.code : '';
+      console.warn(`    · 第 ${i + 1}/${tries} 次失败：${e.message}${code ? '（' + code + '）' : ''}`);
+      if (i < tries - 1) await sleep(1200 * (i + 1));
+    }
   }
-  return { status: res.status, ok: res.ok, text };
+  throw lastErr || new Error('未知错误');
 }
 
-/* ---------- 工具 ---------- */
+/* ---------- 解析 ---------- */
 function toCodes(raw, len) {
   const s = Array.isArray(raw) ? raw.join(' ') : String(raw == null ? '' : raw);
   const tokens = s.split(/[\s,，、+|]+/).filter(Boolean);
@@ -76,7 +90,6 @@ function mapApiItems(list, len) {
   return dedupeSort(out);
 }
 
-/* 同时支持：属性写法 / 子标签写法 */
 function parseXmlRows(text, len) {
   const out = [];
   const rowRe = /<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/gi;
@@ -126,41 +139,47 @@ function parseAny(text, len) {
       if (items.length) return items;
     } catch (e) {}
   }
-
   const xml = parseXmlRows(t, len);
   if (xml.length) return xml;
-
   return parseHtmlRows(t, len);
 }
 
-/* ---------- 候选地址 ---------- */
+/* ---------- 候选地址（直连 + 代理） ---------- */
 function candidates(game) {
-  const list = [
-    { name: '体彩官网', url: apiUrl(game.gameNo), headers: { Referer: 'https://static.sporttery.cn/' } }
+  const list = [];
+  const proxyOf = u => [
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u)
   ];
-  const xmlCodes = game.key === 'qxc' ? ['qxc'] : ['plw', 'pl5'];
-  for (const c of xmlCodes) {
-    list.push({ name: `500XML-${c}`, url: `https://kaijiang.500.com/static/info/kaijiang/xml/${c}/list.xml` });
+
+  list.push({ name: '体彩官网', url: apiUrl(game.gameNo), headers: { Referer: 'https://static.sporttery.cn/' } });
+
+  for (const code of game.xmlCodes) {
+    const xmlUrl = `https://kaijiang.500.com/static/info/kaijiang/xml/${code}/list.xml`;
+    list.push({ name: `500XML-${code}`, url: xmlUrl });
+    const ps = proxyOf(xmlUrl);
+    list.push({ name: `500XML-${code}-代理A`, url: ps[0] });
+    list.push({ name: `500XML-${code}-代理B`, url: ps[1] });
   }
-  list.push({ name: '500开奖页', url: `https://kaijiang.500.com/${game.site}.shtml` });
+
+  const pageUrl = `https://kaijiang.500.com/${game.site}.shtml`;
+  list.push({ name: '500开奖页', url: pageUrl });
+  const pp = proxyOf(pageUrl);
+  list.push({ name: '500开奖页-代理A', url: pp[0] });
+
   return list;
 }
 
 async function fetchGame(game) {
   for (const src of candidates(game)) {
     try {
-      const r = await grab(src.url, src.headers);
-      if (!r.ok) {
-        console.warn(`· ${game.name}｜${src.name} → HTTP ${r.status}`);
-        continue;
-      }
-      const items = parseAny(r.text, game.len).slice(0, 30);
+      const text = await grab(src.url, src.headers, 2);
+      const items = parseAny(text, game.len).slice(0, 30);
       if (items.length) {
         console.log(`✓ ${game.name}｜${src.name} → ${items.length} 期，最新第 ${items[0].issue} 期（${items[0].date}），号码 ${items[0].codes.join(' ')}`);
         return items;
       }
-      const snip = r.text.replace(/\s+/g, ' ').slice(0, 180);
-      console.warn(`· ${game.name}｜${src.name} → HTTP 200 未解析（长度 ${r.text.length}）片段：${snip}`);
+      console.warn(`· ${game.name}｜${src.name} → 拿到内容但没解析出数据（长度 ${text.length}）`);
     } catch (e) {
       console.warn(`· ${game.name}｜${src.name} → ${e.message}`);
     }
@@ -185,17 +204,17 @@ async function fetchGame(game) {
       hasAny = true;
     } else if (Array.isArray(old[g.key]) && old[g.key].length) {
       result[g.key] = old[g.key];
-      console.warn(`· ${g.name} 本轮无新数据，保留原有 ${old[g.key].length} 期`);
+      console.warn(`· ${g.name} 本轮抓取失败，保留原有 ${old[g.key].length} 期`);
       hasAny = true;
     }
   }
 
   if (!hasAny) {
-    console.error('所有地址都失败，且没有历史数据，不覆盖 data.json');
+    console.error('所有数据源都失败，且没有历史数据，不覆盖 data.json');
     process.exit(1);
   }
   if (!gotNew) {
-    console.log('本轮没有新数据，data.json 保持不动');
+    console.log('本轮没有拿到新数据，data.json 保持不动');
     return;
   }
 
