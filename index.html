@@ -2,403 +2,372 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#ffffff">
-<title>开奖号码</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f43f5e">
+<title>七星彩 · 排列五 开奖号码</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; }
-  body {
-    background: #f2f3f5;
-    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-    color: #1f2328; padding-bottom: 90px;
-  }
-  :root { --red: #d92b2b; --line: #ececec; --tint: #fff2f2; --tint2: #fdf6f6; }
-
-  header { position: sticky; top: 0; z-index: 20; background: #fff; box-shadow: 0 1px 0 #e8e8e8; padding-top: env(safe-area-inset-top); }
-  .head-top { display: flex; align-items: center; gap: 8px; padding: 12px 16px 8px; }
-  .head-top h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: .5px; flex: 1; }
-  .refresh { border: 0; background: #f1f3f4; color: #5f6368; font-size: 12px; padding: 7px 12px; border-radius: 999px; font-family: inherit; }
-  .refresh:active { background: #e6e8ea; }
-
-  .tabs { display: flex; gap: 10px; padding: 0 16px 10px; }
-  .tabs button { flex: 1; padding: 10px 0; border: 0; border-radius: 12px; background: #f1f3f4; color: #5f6368; font-size: 15px; font-weight: 700; letter-spacing: .5px; }
-  .tabs button.on { background: var(--red); color: #fff; box-shadow: 0 4px 12px rgba(217,43,43,.28); }
-
-  .status { padding: 0 16px 8px; font-size: 11px; color: #9aa0a6; }
-  .status.err { color: #e5484d; }
-
-  main { max-width: 520px; margin: 0 auto; padding: 12px 12px 0; }
-
-  .latest { background: #fff; border-radius: 16px; padding: 12px 12px 14px; box-shadow: 0 2px 10px rgba(0,0,0,.05); margin-bottom: 14px; }
-  .latest-head { display: flex; align-items: baseline; justify-content: space-between; padding: 0 2px 10px; }
-  .latest-head b { font-size: 14px; font-weight: 800; color: var(--red); }
-  .latest-head i { font-style: normal; font-size: 12px; color: #9aa0a6; }
-  .latest .nums { display: flex; gap: 6px; }
-  .latest .c { flex: 1; text-align: center; font-size: 34px; font-weight: 900; color: var(--red); font-variant-numeric: tabular-nums; background: var(--tint); border-radius: 10px; padding: 8px 0 10px; line-height: 1.1; }
-  .latest .c.special { background: #ffe6e6; }
-
-  .list-title { display: flex; justify-content: space-between; align-items: baseline; padding: 2px 6px 8px; font-size: 12px; color: #9aa0a6; }
-  .table { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
-
-  .row { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); }
-  .row:last-child { border-bottom: 0; }
-  .row:nth-child(even) { background: var(--tint2); }
-
-  .meta { flex: 0 0 58px; width: 58px; padding: 8px 0 8px 10px; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
-  .meta b { font-size: 11px; color: #5f6368; font-weight: 700; }
-  .meta i { font-style: normal; font-size: 10px; color: #b0b4b9; }
-
-  .nums { flex: 1; display: flex; min-width: 0; }
-  .c { flex: 1; text-align: center; font-size: 27px; font-weight: 800; color: var(--red); font-variant-numeric: tabular-nums; padding: 10px 0; border-left: 1px solid var(--line); line-height: 1.1; }
-  .c.special { background: var(--tint); }
-  .c.sep { border-left: 2px solid #dedede; }
-
-  .del { flex: 0 0 34px; width: 34px; border: 0; background: transparent; color: #d0d4d8; font-size: 12px; }
-  .del.armed { color: #fff; background: #e5484d; font-size: 10px; }
-
-  .empty { text-align: center; padding: 48px 0; color: #b0b4b9; font-size: 13px; }
-
-  .fab { position: fixed; right: 18px; bottom: calc(22px + env(safe-area-inset-bottom)); width: 54px; height: 54px; border: 0; border-radius: 50%; background: var(--red); color: #fff; font-size: 30px; font-weight: 300; line-height: 1; padding-bottom: 4px; box-shadow: 0 8px 20px rgba(217,43,43,.4); z-index: 30; }
-
-  .sheet-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; }
-  .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; background: #fff; border-radius: 20px 20px 0 0; padding: 10px 16px calc(18px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto; max-height: 88vh; overflow-y: auto; }
-  .sheet .bar { width: 40px; height: 4px; background: #e0e0e0; border-radius: 2px; margin: 0 auto 12px; }
-  .sheet h3 { margin: 0 0 12px; font-size: 15px; font-weight: 800; }
-  .field { margin-bottom: 10px; }
-  .field label { display: block; font-size: 11px; color: #9aa0a6; margin-bottom: 5px; }
-  .field input { width: 100%; padding: 11px 12px; border: 0; border-radius: 12px; background: #f2f3f5; font-size: 15px; color: #1f2328; outline: none; font-family: inherit; }
-  .row2 { display: flex; gap: 10px; }
-  .row2 > * { flex: 1; }
-  .preview { display: flex; gap: 5px; margin: 4px 0 12px; min-height: 42px; }
-  .preview .p { flex: 1; text-align: center; padding: 8px 0; border-radius: 8px; background: #f2f3f5; font-size: 20px; font-weight: 800; color: #d92b2b; }
-  .preview .p.empty { color: #cdd1d5; }
-  .btn-main { width: 100%; padding: 14px; border: 0; border-radius: 14px; background: var(--red); color: #fff; font-size: 15px; font-weight: 700; }
-  .btn-ghost { width: 100%; padding: 12px; border: 0; border-radius: 14px; background: #f1f3f4; color: #5f6368; font-size: 14px; margin-top: 8px; }
-  .msg { font-size: 12px; color: #e5484d; min-height: 16px; margin-top: 8px; text-align: center; }
-  .hint { font-size: 11px; color: #9aa0a6; text-align: center; margin-top: 6px; }
-  .hidden { display: none !important; }
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-tap-highlight-color:transparent}
+  .num{font-variant-numeric:tabular-nums}
+  .ball{display:flex;align-items:center;justify-content:center;background:#fff1f2;color:#e11d48;font-weight:800;font-size:26px;line-height:1;padding:15px 0;border-radius:14px}
+  .ball.sm{font-size:19px;padding:9px 0;border-radius:9px}
+  @keyframes up{from{transform:translateY(16px);opacity:.5}to{transform:none;opacity:1}}
+  @keyframes pop{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+  .anim-up{animation:up .22s ease-out}
+  .anim-pop{animation:pop .18s ease-out}
+  input{font-family:inherit}
 </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-900">
 
-<header>
-  <div class="head-top">
-    <h1>开奖号码</h1>
-    <button class="refresh" id="refreshBtn">刷新</button>
-  </div>
-  <div class="tabs">
-    <button data-game="qxc" class="on">七星彩</button>
-    <button data-game="pl5">排列五</button>
-  </div>
-  <div class="status" id="status">准备更新…</div>
-</header>
+<div class="mx-auto w-full max-w-[520px] pb-32">
 
-<main>
-  <section id="latest"></section>
-  <div class="list-title">
-    <span>历史开奖</span>
-    <span id="count"></span>
-  </div>
-  <div class="table" id="table"></div>
-</main>
-
-<button class="fab" id="addBtn">＋</button>
-
-<div id="mask" class="sheet-mask hidden"></div>
-<div id="sheet" class="sheet hidden">
-  <div class="bar"></div>
-  <h3 id="sheetTitle">记一期开奖</h3>
-  <div class="row2">
-    <div class="field">
-      <label>期号</label>
-      <input id="issueInput" inputmode="numeric" placeholder="例如 26138">
+  <header class="sticky top-0 z-20 bg-slate-100/95 backdrop-blur px-4 pt-4">
+    <div class="flex items-center justify-between">
+      <h1 class="text-[22px] font-extrabold tracking-tight">开奖号码</h1>
+      <button id="btnRefresh" class="px-4 py-2 rounded-full bg-white text-slate-600 text-sm font-medium shadow-sm active:scale-95 transition">刷新</button>
     </div>
-    <div class="field">
-      <label>日期</label>
-      <input id="dateInput" type="date">
+    <div class="mt-3 grid grid-cols-2 gap-2.5">
+      <button data-game="qxc" class="tab"></button>
+      <button data-game="pl5" class="tab"></button>
     </div>
-  </div>
-  <div class="field">
-    <label id="numsLabel">开奖号码</label>
-    <input id="numsInput" inputmode="numeric" placeholder="1384159 或 1 3 8 4 1 5 9">
-  </div>
-  <div class="preview" id="preview"></div>
-  <button class="btn-main" id="saveBtn">保存</button>
-  <button class="btn-ghost" id="cancelBtn">取消</button>
-  <div class="msg" id="msg"></div>
-  <div class="hint" id="hint"></div>
+    <p id="statusLine" class="mt-2 mb-2 text-xs text-slate-400 min-h-[16px]"></p>
+  </header>
+
+  <main id="main" class="px-4"></main>
+
+  <p class="px-5 mt-6 text-[11px] leading-relaxed text-slate-400">
+    数据由 GitHub Actions 每期开奖后自动更新。<br>
+    手动录入的期号只保存在这台手机里，可随时删除。
+  </p>
 </div>
 
-<script>
-/* ========= 数据源：改成你自己的仓库地址 ========= */
-const DATA_URLS = [
-  './data.json',
-  'https://raw.githubusercontent.com/USER/REPO/main/data.json'
-];
+<div class="fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-slate-100 via-slate-100 to-transparent pt-6"
+     style="padding-bottom:calc(0.75rem + env(safe-area-inset-bottom,0px))">
+  <div class="mx-auto w-full max-w-[520px] px-4">
+    <button id="btnAdd" class="w-full h-12 rounded-2xl bg-slate-900 text-white font-bold active:scale-[.99] transition">＋ 手动录入</button>
+  </div>
+</div>
 
-const GAMES = {
-  qxc: { name: '七星彩', count: 7, split: 4, label: '前 6 位 0-9，第 7 位 0-14', max: i => (i === 6 ? 14 : 9) },
-  pl5: { name: '排列五', count: 5, split: 0, label: '5 位数字，每位 0-9', max: () => 9 }
+<!-- 录入面板 -->
+<div id="sheet" class="fixed inset-0 z-40 hidden">
+  <div class="absolute inset-0 bg-black/40" data-close="1"></div>
+  <div class="anim-up absolute inset-x-0 bottom-0 bg-white rounded-t-3xl px-5 pt-5"
+       style="padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px))">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-bold">手动录入 · <span id="sheetGame"></span></h2>
+      <button data-close="1" class="w-9 h-9 rounded-full bg-slate-100 text-slate-400 text-xl leading-none">×</button>
+    </div>
+    <div class="mt-4">
+      <label class="block text-xs text-slate-400 mb-1.5">期号</label>
+      <input id="fIssue" inputmode="numeric" placeholder="如 26137"
+             class="num w-full h-12 px-4 rounded-2xl bg-slate-100 outline-none focus:ring-2 focus:ring-rose-300">
+      <label class="block text-xs text-slate-400 mb-1.5 mt-3">开奖日期</label>
+      <input id="fDate" type="date"
+             class="num w-full h-12 px-4 rounded-2xl bg-slate-100 outline-none focus:ring-2 focus:ring-rose-300">
+      <label class="block text-xs text-slate-400 mb-1.5 mt-3">号码（按位填，自动加空格）</label>
+      <input id="fCodes" inputmode="numeric"
+             class="num w-full h-12 px-4 rounded-2xl bg-slate-100 outline-none focus:ring-2 focus:ring-rose-300 text-lg tracking-widest">
+      <p id="fErr" class="text-sm text-rose-600 mt-2 min-h-[20px]"></p>
+    </div>
+    <button id="btnSave" class="w-full h-12 rounded-2xl bg-rose-600 text-white font-bold active:scale-[.99] transition">保存</button>
+  </div>
+</div>
+
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 top-4 z-50 hidden"></div>
+
+<script>
+const NAMES = { qxc: '七星彩', pl5: '排列五' };
+const LENS  = { qxc: 7, pl5: 5 };
+const LS_KEY = 'lottery_manual_v1';
+
+const TAB_ON  = 'tab h-12 rounded-2xl font-bold text-base bg-rose-600 text-white shadow-lg shadow-rose-600/25 active:scale-[.98] transition';
+const TAB_OFF = 'tab h-12 rounded-2xl font-bold text-base bg-white text-slate-500 active:scale-[.98] transition';
+
+const STATE = {
+  game: 'qxc',
+  remote: { qxc: [], pl5: [], updatedAt: null },
+  manual: { qxc: [], pl5: [] },
+  loading: true,
+  error: '',
+  pendingDelete: null
 };
 
-const STORE = 'lottery_data_v1';
-const T_STORE = 'lottery_updated_v1';
-let game = 'qxc';
-let db = { qxc: [], pl5: [] };
-let armedDel = null;
-let loading = false;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-/* ========= 读写 ========= */
-function load() {
+/* ---------- 号码解析：严格按位数，杜绝「11」这类错位 ---------- */
+function toCodes(raw, len) {
+  let s = Array.isArray(raw) ? raw.join(' ') : String(raw == null ? '' : raw);
+  const tokens = s.split(/[\s,，、+]+/).filter(Boolean);
+  if (tokens.length === len && tokens.every(t => /^\d$/.test(t))) return tokens;
+  const digits = s.replace(/\D/g, '');
+  if (digits.length < len) return null;
+  return digits.slice(0, len).split('');
+}
+
+/* ---------- 本地手动数据 ---------- */
+function loadManual() {
   try {
-    const raw = JSON.parse(localStorage.getItem(STORE));
-    if (raw && raw.qxc && raw.pl5) db = raw;
+    const raw = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    STATE.manual.qxc = Array.isArray(raw.qxc) ? raw.qxc : [];
+    STATE.manual.pl5 = Array.isArray(raw.pl5) ? raw.pl5 : [];
   } catch (e) {}
-  if (!db.qxc.length && !db.pl5.length) seed();
 }
-function save() { try { localStorage.setItem(STORE, JSON.stringify(db)); } catch (e) {} }
-
-function seed() {
-  db.qxc = [
-    { issue: '26137', date: '2026-11-18', nums: [1,3,8,4,1,5,9] },
-    { issue: '26136', date: '2026-11-16', nums: [6,3,9,3,7,3,3] },
-    { issue: '26135', date: '2026-11-14', nums: [8,7,1,5,7,0,6] },
-    { issue: '26134', date: '2026-11-12', nums: [7,7,5,5,1,3,11] }
-  ];
-  db.pl5 = [
-    { issue: '26137', date: '2026-11-18', nums: [2,9,4,5,6] },
-    { issue: '26136', date: '2026-11-17', nums: [3,3,3,4,1] }
-  ];
-  save();
+function saveManualStore() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({ qxc: STATE.manual.qxc, pl5: STATE.manual.pl5 }));
+  } catch (e) {}
 }
 
-const listOf = g => (db[g] || []).slice().sort((a, b) => Number(b.issue) - Number(a.issue));
-
-/* ========= 联网更新 ========= */
-async function pullRemote() {
-  if (loading) return;
-  loading = true;
-  setStatus('正在更新…');
-
-  for (const url of DATA_URLS) {
-    if (url.indexOf('USER/REPO') >= 0) continue;
-    try {
-      const res = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (!data || (!data.qxc && !data.pl5)) continue;
-
-      ['qxc', 'pl5'].forEach(k => {
-        const incoming = (data[k] || []).filter(x => x && x.issue && Array.isArray(x.nums));
-        if (!incoming.length) return;
-        const map = new Map();
-        db[k].forEach(x => map.set(x.issue, x));
-        incoming.forEach(x => map.set(x.issue, x));
-        db[k] = [...map.values()].sort((a, b) => Number(b.issue) - Number(a.issue)).slice(0, 80);
-      });
-
-      save();
-      const t = new Date();
-      localStorage.setItem(T_STORE, t.toISOString());
-      render();
-      setStatus('数据更新于 ' + fmtTime(t) + ' · 点右上角可刷新');
-      loading = false;
-      return;
-    } catch (e) {
-      /* 换下一个地址 */
-    }
-  }
-
-  loading = false;
-  const t = localStorage.getItem(T_STORE);
-  setStatus(t ? '离线模式 · 上次更新 ' + fmtTime(new Date(t)) : '暂时连不上数据源，可先手动录入', true);
+/* ---------- 合并 + 排序 ---------- */
+function listFor(game) {
+  const map = new Map();
+  STATE.remote[game].forEach(it => map.set(it.issue, it));
+  STATE.manual[game].forEach(it => map.set(it.issue, { ...it, manual: true }));
+  return [...map.values()].sort((a, b) => (Number(b.issue) || 0) - (Number(a.issue) || 0));
 }
 
-function fmtTime(d) {
-  const p = n => String(n).padStart(2, '0');
-  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+/* ---------- 工具 ---------- */
+const pad = n => String(n).padStart(2, '0');
+function today() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+function shortDate(s) { const m = String(s || '').match(/(\d{1,2})-(\d{1,2})$/); return m ? `${m[1]}-${m[2]}` : (s || ''); }
+function fmtTime(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+let toastTimer;
+function toast(msg) {
+  const t = $('toast');
+  t.innerHTML = `<div class="anim-pop px-4 py-2.5 rounded-full bg-slate-900/90 text-white text-sm shadow-lg">${esc(msg)}</div>`;
+  t.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add('hidden'), 1800);
 }
 
-function setStatus(txt, isErr) {
-  const el = document.getElementById('status');
-  el.textContent = txt;
-  el.className = 'status' + (isErr ? ' err' : '');
-}
+/* ---------- 渲染 ---------- */
+function rowHtml(it) {
+  const len = LENS[STATE.game];
+  const pending = STATE.pendingDelete === it.issue;
+  const tail = it.manual
+    ? `<button data-del="${esc(it.issue)}" class="w-9 h-9 rounded-full leading-none ${pending
+        ? 'bg-rose-100 text-rose-600 text-[11px] font-bold'
+        : 'text-slate-300 text-lg'}">${pending ? '删' : '×'}</button>`
+    : `<span class="inline-block w-9"></span>`;
 
-/* ========= 渲染 ========= */
-function numCells(nums, g) {
-  const cfg = GAMES[g];
-  return nums.map((n, i) => {
-    const cls = ['c'];
-    if (i === cfg.count - 1) cls.push('special');
-    if (cfg.split && i === cfg.split) cls.push('sep');
-    return `<div class="${cls.join(' ')}">${n}</div>`;
-  }).join('');
+  return `<div class="flex items-center gap-2 px-3 py-2 border-t border-slate-100">
+    <div class="w-14 shrink-0">
+      <div class="text-[13px] font-semibold num leading-tight">${esc(it.issue)}</div>
+      <div class="text-[11px] text-slate-400 num">${esc(shortDate(it.date))}</div>
+    </div>
+    <div class="flex-1 grid gap-1" style="grid-template-columns:repeat(${len},minmax(0,1fr))">
+      ${it.codes.map(c => `<div class="ball sm">${esc(c)}</div>`).join('')}
+    </div>
+    <div class="shrink-0 text-right">${tail}</div>
+  </div>`;
 }
 
 function render() {
-  const cfg = GAMES[game];
-  const list = listOf(game);
+  document.querySelectorAll('.tab').forEach(btn => {
+    const on = btn.dataset.game === STATE.game;
+    btn.className = on ? TAB_ON : TAB_OFF;
+    btn.textContent = NAMES[btn.dataset.game];
+  });
 
-  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.game === game));
-  document.getElementById('numsLabel').textContent = cfg.label;
-  document.getElementById('hint').textContent = cfg.label;
+  const s = $('statusLine');
+  if (STATE.error) {
+    s.textContent = STATE.error;
+    s.className = 'mt-2 mb-2 text-xs text-rose-500 min-h-[16px]';
+  } else if (STATE.loading && !STATE.remote.updatedAt) {
+    s.textContent = '正在获取数据…';
+    s.className = 'mt-2 mb-2 text-xs text-slate-400 min-h-[16px]';
+  } else {
+    s.textContent = STATE.remote.updatedAt ? '数据更新于 ' + fmtTime(STATE.remote.updatedAt) : '';
+    s.className = 'mt-2 mb-2 text-xs text-slate-400 min-h-[16px]';
+  }
 
-  const latestEl = document.getElementById('latest');
-  latestEl.innerHTML = list.length ? `
-    <div class="latest">
-      <div class="latest-head"><b>第 ${list[0].issue} 期</b><i>${list[0].date || ''}</i></div>
-      <div class="nums">${numCells(list[0].nums, game)}</div>
-    </div>` : '';
-
-  const table = document.getElementById('table');
-  document.getElementById('count').textContent = list.length ? `共 ${list.length} 期` : '';
+  const main = $('main');
+  const list = listFor(STATE.game);
+  const len = LENS[STATE.game];
 
   if (!list.length) {
-    table.innerHTML = `<div class="empty">还没有数据，点右下角 ＋ 记一期</div>`;
+    main.innerHTML = `<section class="bg-white rounded-3xl p-6 text-center shadow-sm">
+      <div class="text-4xl">🎯</div>
+      <p class="mt-3 font-semibold">还没有${NAMES[STATE.game]}数据</p>
+      <p class="mt-1.5 text-sm text-slate-400 leading-relaxed">
+        自动抓取还没跑出结果，可以先点下面「手动录入」临时记上。
+      </p>
+    </section>`;
     return;
   }
 
-  table.innerHTML = list.map(it => `
-    <div class="row">
-      <div class="meta"><b>${it.issue}</b><i>${shortDate(it.date)}</i></div>
-      <div class="nums">${numCells(it.nums, game)}</div>
-      <button class="del ${armedDel && armedDel.issue === it.issue ? 'armed' : ''}" data-issue="${it.issue}">
-        ${armedDel && armedDel.issue === it.issue ? '删?' : '✕'}
-      </button>
-    </div>`).join('');
+  const latest = list[0];
+  const rest = list.slice(1);
+
+  main.innerHTML = `
+  <section class="bg-white rounded-3xl p-4 shadow-sm">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="text-[17px] font-extrabold">第 ${esc(latest.issue)} 期</div>
+        <div class="text-xs text-slate-400 num mt-1">${esc(latest.date)}${latest.manual ? ' · 手动录入' : ''}</div>
+      </div>
+      <button id="btnCopy" class="px-3 py-1.5 rounded-full bg-slate-100 text-slate-500 text-xs font-medium active:scale-95 transition">复制</button>
+    </div>
+    <div class="grid gap-1.5 mt-3.5" style="grid-template-columns:repeat(${len},minmax(0,1fr))">
+      ${latest.codes.map(c => `<div class="ball">${esc(c)}</div>`).join('')}
+    </div>
+  </section>
+
+  <section class="mt-5">
+    <div class="flex items-end justify-between px-1 mb-2">
+      <h2 class="text-sm font-semibold text-slate-500">历史开奖</h2>
+      <span class="text-xs text-slate-400 num">共 ${list.length} 期</span>
+    </div>
+    <div class="bg-white rounded-2xl overflow-hidden shadow-sm">
+      ${rest.length
+        ? rest.map(rowHtml).join('')
+        : `<div class="py-10 text-center text-sm text-slate-400">暂无更多历史</div>`}
+    </div>
+  </section>`;
+
+  const copyBtn = $('btnCopy');
+  if (copyBtn) copyBtn.onclick = () => copyLatest(latest);
 }
 
-function shortDate(d) {
-  if (!d) return '';
-  const p = d.split('-');
-  return p.length === 3 ? `${+p[1]}-${p[2]}` : d;
+/* ---------- 复制 ---------- */
+async function copyLatest(it) {
+  const text = `${NAMES[STATE.game]} 第${it.issue}期 ${it.date}\n${it.codes.join(' ')}`;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    toast('已复制');
+  } catch (e) {
+    toast('复制失败，请长按选择');
+  }
 }
 
-/* ========= 删除（两次点击） ========= */
-document.getElementById('table').addEventListener('click', e => {
-  const btn = e.target.closest('.del');
-  if (!btn) return;
-  const issue = btn.dataset.issue;
-
-  if (!armedDel || armedDel.issue !== issue) {
-    armedDel = { issue };
+/* ---------- 抓 data.json ---------- */
+async function loadRemote() {
+  STATE.loading = true;
+  render();
+  try {
+    const res = await fetch('./data.json?v=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const remote = { qxc: [], pl5: [], updatedAt: json.updatedAt || null };
+    ['qxc', 'pl5'].forEach(k => {
+      const arr = Array.isArray(json[k]) ? json[k] : [];
+      arr.forEach(it => {
+        const codes = toCodes(it.codes ?? it.result ?? it.code ?? it.numbers, LENS[k]);
+        const issue = String(it.issue ?? it.qihao ?? '').trim();
+        if (!codes || !issue) return;
+        remote[k].push({
+          issue,
+          date: String(it.date ?? '').slice(0, 10),
+          codes,
+          manual: false
+        });
+      });
+    });
+    STATE.remote = remote;
+    STATE.error = '';
+  } catch (e) {
+    STATE.error = '暂时连不上数据源，可先手动录入';
+  } finally {
+    STATE.loading = false;
     render();
-    setTimeout(() => { if (armedDel && armedDel.issue === issue) { armedDel = null; render(); } }, 3000);
+  }
+}
+
+/* ---------- 录入面板 ---------- */
+function openSheet() {
+  $('sheetGame').textContent = NAMES[STATE.game];
+  $('fIssue').value = '';
+  $('fDate').value = today();
+  $('fCodes').value = '';
+  $('fCodes').placeholder = Array.from({ length: LENS[STATE.game] }, (_, i) => i + 1).join(' ');
+  $('fErr').textContent = '';
+  $('sheet').classList.remove('hidden');
+}
+function closeSheet() { $('sheet').classList.add('hidden'); }
+
+$('fCodes').addEventListener('input', () => {
+  const len = LENS[STATE.game];
+  const digits = $('fCodes').value.replace(/\D/g, '').slice(0, len);
+  $('fCodes').value = digits.split('').join(' ');
+});
+
+$('btnSave').onclick = () => {
+  const game = STATE.game;
+  const len = LENS[game];
+  const issue = $('fIssue').value.trim();
+  const date = $('fDate').value || today();
+  const err = $('fErr');
+  if (!/^\d{3,10}$/.test(issue)) { err.textContent = '期号请填数字，例如 26137'; return; }
+  const digits = $('fCodes').value.replace(/\D/g, '');
+  if (digits.length !== len) {
+    err.textContent = `${NAMES[game]}需要 ${len} 个号码，现在填了 ${digits.length} 个`;
     return;
   }
-  armedDel = null;
-  db[game] = db[game].filter(x => x.issue !== issue);
-  save(); render();
-});
-
-/* ========= 切换 ========= */
-document.querySelectorAll('.tabs button').forEach(b => {
-  b.addEventListener('click', () => { game = b.dataset.game; armedDel = null; render(); });
-});
-
-/* ========= 录入 ========= */
-const mask = document.getElementById('mask');
-const sheet = document.getElementById('sheet');
-const issueInput = document.getElementById('issueInput');
-const dateInput = document.getElementById('dateInput');
-const numsInput = document.getElementById('numsInput');
-const preview = document.getElementById('preview');
-const msg = document.getElementById('msg');
-
-const today = () => {
-  const d = new Date(), p = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  err.textContent = '';
+  STATE.manual[game] = STATE.manual[game].filter(x => x.issue !== issue);
+  STATE.manual[game].unshift({ issue, date, codes: digits.split(''), manual: true });
+  saveManualStore();
+  STATE.pendingDelete = null;
+  closeSheet();
+  render();
+  toast('已保存第 ' + issue + ' 期');
 };
 
-function nextIssue() {
-  const list = listOf(game);
-  if (!list.length) return '';
-  const n = Number(list[0].issue);
-  return isFinite(n) ? String(n + 1) : '';
-}
-
-function openSheet() {
-  msg.textContent = '';
-  numsInput.value = '';
-  issueInput.value = nextIssue();
-  dateInput.value = today();
-  document.getElementById('sheetTitle').textContent = '记一期 · ' + GAMES[game].name;
-  renderPreview();
-  mask.classList.remove('hidden');
-  sheet.classList.remove('hidden');
-  setTimeout(() => numsInput.focus(), 150);
-}
-
-function closeSheet() {
-  mask.classList.add('hidden');
-  sheet.classList.add('hidden');
-}
-
-function parseNums(str) {
-  const cfg = GAMES[game];
-  const s = String(str).trim();
-  if (!s) return null;
-
-  const tokens = s.split(/[\s,，、|]+/).filter(Boolean);
-  let arr = null;
-
-  if (tokens.length === cfg.count) {
-    arr = tokens;
-  } else if (tokens.length === 1 && /^\d+$/.test(tokens[0])) {
-    const t = tokens[0];
-    if (t.length === cfg.count) arr = t.split('');
-    else if (game === 'qxc' && t.length === cfg.count + 1) arr = t.slice(0, cfg.count - 1).split('').concat([t.slice(cfg.count - 1)]);
-  }
-  if (!arr) return null;
-
-  const nums = arr.map(x => parseInt(x, 10));
-  if (nums.some(n => !isFinite(n))) return null;
-  for (let i = 0; i < nums.length; i++) {
-    if (nums[i] < 0 || nums[i] > cfg.max(i)) return { error: `第 ${i + 1} 位应在 0-${cfg.max(i)} 之间` };
-  }
-  return { nums };
-}
-
-function renderPreview() {
-  const cfg = GAMES[game];
-  const r = parseNums(numsInput.value);
-  const nums = r && r.nums ? r.nums : null;
-  let html = '';
-  for (let i = 0; i < cfg.count; i++) {
-    html += `<div class="p ${nums ? '' : 'empty'}">${nums && nums[i] != null ? nums[i] : '·'}</div>`;
-  }
-  preview.innerHTML = html;
-  msg.textContent = r && r.error ? r.error : '';
-}
-
-numsInput.addEventListener('input', renderPreview);
-document.getElementById('addBtn').addEventListener('click', openSheet);
-document.getElementById('cancelBtn').addEventListener('click', closeSheet);
-mask.addEventListener('click', closeSheet);
-
-document.getElementById('saveBtn').addEventListener('click', () => {
-  const cfg = GAMES[game];
-  const r = parseNums(numsInput.value);
-  if (!r) { msg.textContent = `请填写 ${cfg.count} 位号码`; return; }
-  if (r.error) { msg.textContent = r.error; return; }
-
-  const issue = issueInput.value.trim() || nextIssue();
-  if (!issue) { msg.textContent = '请填写期号'; return; }
-  if (db[game].some(x => x.issue === issue)) { msg.textContent = `第 ${issue} 期已存在`; return; }
-
-  db[game].push({ issue, date: dateInput.value || today(), nums: r.nums });
-  save(); closeSheet(); render();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+/* ---------- 事件 ---------- */
+document.querySelectorAll('.tab').forEach(b => {
+  b.onclick = () => {
+    if (STATE.game === b.dataset.game) return;
+    STATE.game = b.dataset.game;
+    STATE.pendingDelete = null;
+    render();
+  };
 });
 
-document.getElementById('refreshBtn').addEventListener('click', pullRemote);
+$('btnRefresh').onclick = () => { toast('正在刷新…'); loadRemote(); };
+$('btnAdd').onclick = openSheet;
+document.querySelectorAll('[data-close]').forEach(el => { el.onclick = closeSheet; });
 
-/* ========= 启动 ========= */
-load();
+$('main').addEventListener('click', e => {
+  const btn = e.target.closest('[data-del]');
+  if (!btn) return;
+  const issue = btn.dataset.del;
+  if (STATE.pendingDelete === issue) {
+    STATE.manual[STATE.game] = STATE.manual[STATE.game].filter(x => x.issue !== issue);
+    STATE.pendingDelete = null;
+    saveManualStore();
+    render();
+    toast('已删除');
+  } else {
+    STATE.pendingDelete = issue;
+    render();
+    setTimeout(() => {
+      if (STATE.pendingDelete === issue) { STATE.pendingDelete = null; render(); }
+    }, 3000);
+  }
+});
+
+/* ---------- 启动 ---------- */
+loadManual();
 render();
-pullRemote();
+loadRemote();
 </script>
 </body>
 </html>
