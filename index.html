@@ -11,7 +11,6 @@
   body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-tap-highlight-color:transparent}
   .num{font-variant-numeric:tabular-nums}
 
-  /* 配色变量：由调色按钮动态修改 */
   :root{
     --ball-bg:#fff1f2;
     --ball-fg:#e11d48;
@@ -19,17 +18,26 @@
     --ball-fg-sm:#f43f5e;
   }
 
+  .balls{display:flex;align-items:center;justify-content:center;gap:4px}
+  .balls.list{gap:4px}
+
+  /* 前 4 位：大号（最新一期与历史共用，保证上下对齐） */
   .ball{
+    flex:0 0 auto;width:13%;
+    height:74px;border-radius:16px;
     display:flex;align-items:center;justify-content:center;
-    background:var(--ball-bg);color:var(--ball-fg);font-weight:800;
-    font-size:34px;line-height:1;padding:19px 0;border-radius:16px;
-    letter-spacing:-0.5px;
-    transition:background .18s ease, color .18s ease;
+    background:var(--ball-bg);color:var(--ball-fg);
+    font-weight:800;font-size:36px;line-height:1;letter-spacing:-0.5px;
+    transition:background .18s ease, color .18s ease, width .16s ease, height .16s ease, font-size .16s ease;
   }
-  .ball.sm{
-    font-size:17px;padding:8px 0;border-radius:9px;letter-spacing:-0.3px;
-    background:var(--ball-bg-sm);color:var(--ball-fg-sm);font-weight:700;
-    transition:background .18s ease, color .18s ease;
+  /* 第 5 位起：小号、更窄 */
+  .ball.xs{
+    width:6.8%;height:54px;border-radius:11px;
+    font-size:17px;letter-spacing:0;
+  }
+  /* 隐藏后 4 位时：前 4 位放大并居中 */
+  .ball.zoom{
+    width:21%;height:88px;border-radius:18px;font-size:48px;
   }
 
   .caret{
@@ -38,6 +46,7 @@
     background:#ecfdf5;color:#059669;
     font-size:13px;font-weight:900;line-height:1;
     transition:transform .18s ease, background .18s ease;
+    z-index:1;
   }
   .caret.open{transform:rotate(90deg);background:#d1fae5}
 
@@ -66,9 +75,12 @@
     <div id="headerAll">
       <div class="flex items-center justify-between gap-2">
         <h1 class="text-[22px] font-extrabold tracking-tight">开奖号码</h1>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5">
           <button id="btnColor" class="w-9 h-9 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="切换数字颜色">
             <span id="colorDot" class="w-4 h-4 rounded-full transition-colors" style="background:#e11d48"></span>
+          </button>
+          <button id="btnTail" class="h-9 px-3 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm active:scale-95 transition">
+            <span id="tailLabel">7位</span>
           </button>
           <button id="btnFold" class="fold" aria-label="收起">⌃</button>
           <button id="btnRefresh" class="px-4 py-2 rounded-full bg-white text-slate-600 text-sm font-medium shadow-sm active:scale-95 transition">刷新</button>
@@ -83,9 +95,12 @@
       <p id="statusLine" class="mt-2 mb-2 text-[11px] text-slate-400 min-h-[15px]"></p>
     </div>
 
-    <div id="foldBar" class="hidden items-center justify-end gap-2 py-1">
+    <div id="foldBar" class="hidden items-center justify-end gap-1.5 py-1">
       <button id="btnColor2" class="w-8 h-8 rounded-full bg-white shadow-sm active:scale-95 transition flex items-center justify-center" aria-label="切换数字颜色">
         <span id="colorDot2" class="w-3.5 h-3.5 rounded-full" style="background:#e11d48"></span>
+      </button>
+      <button id="btnTail2" class="h-8 px-2.5 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm active:scale-95 transition">
+        <span id="tailLabel2">7位</span>
       </button>
       <button id="btnFold2" class="fold" aria-label="展开">⌄</button>
     </div>
@@ -104,10 +119,11 @@
 <script>
 const NAMES = { qxc: '七星彩', pl5: '排列五' };
 const LENS  = { qxc: 7, pl5: 5 };
+const BIG_N = 4;
 const REMOTE_DATA = 'https://rorykosanke-debug.github.io/qxc/data.json';
 const LS_COLOR = 'lottery_color_idx';
+const LS_TAIL  = 'lottery_hide_tail';
 
-/* 配色方案：依次循环 */
 const PALETTES = [
   { name:'玫红', bg:'#fff1f2', fg:'#e11d48', bgSm:'#fff5f6', fgSm:'#f43f5e', dot:'#e11d48' },
   { name:'蓝色', bg:'#eff6ff', fg:'#2563eb', bgSm:'#f5f9ff', fgSm:'#3b82f6', dot:'#2563eb' },
@@ -127,11 +143,25 @@ const STATE = {
   error: '',
   folded: false,
   expandAll: false,
+  hideTail: false,
   colorIdx: 0
 };
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* 号码球：hidden 时只显示前 4 位并放大 */
+function ballsHtml(codes, mode) {
+  const shown = STATE.hideTail ? codes.slice(0, BIG_N) : codes;
+  const wrap = mode === 'list' ? 'balls list' : 'balls';
+  const inner = shown.map((c, i) => {
+    let cls = 'ball';
+    if (STATE.hideTail) cls += ' zoom';
+    else if (i >= BIG_N) cls += ' xs';
+    return `<div class="${cls}">${esc(c)}</div>`;
+  }).join('');
+  return `<div class="${wrap}">${inner}</div>`;
+}
 
 /* ---------- 配色 ---------- */
 function applyPalette(idx) {
@@ -155,10 +185,13 @@ function loadPalette() {
   STATE.colorIdx = idx % PALETTES.length;
   applyPalette(STATE.colorIdx);
 }
-function nextPalette() {
-  STATE.colorIdx = (STATE.colorIdx + 1) % PALETTES.length;
-  applyPalette(STATE.colorIdx);
-  toast('数字颜色：' + PALETTES[STATE.colorIdx].name);
+
+/* ---------- 位数开关 ---------- */
+function loadTail() {
+  try { STATE.hideTail = localStorage.getItem(LS_TAIL) === '1'; } catch (e) {}
+}
+function saveTail() {
+  try { localStorage.setItem(LS_TAIL, STATE.hideTail ? '1' : '0'); } catch (e) {}
 }
 
 /* ---------- 号码解析 ---------- */
@@ -190,22 +223,21 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.add('hidden'), 1600);
 }
 
-/* ---------- 历史行：整体同步展开/收起 ---------- */
+/* ---------- 历史行：箭头绝对定位，保证与最新一期左右对齐 ---------- */
 function rowHtml(it) {
-  const len = LENS[STATE.game];
   const open = STATE.expandAll;
   const info = open
-    ? `<div class="shrink-0 anim-fade pr-1">
-         <div class="text-[13px] font-semibold num leading-tight">${esc(it.issue)}</div>
-         <div class="text-[10px] text-slate-300 num mt-0.5">${esc(it.date)}</div>
+    ? `<div class="anim-fade mb-0.5 text-[11px] leading-tight pl-1">
+         <span class="num font-semibold text-slate-500">${esc(it.issue)}</span>
+         <span class="num text-slate-300 ml-1">${esc(it.date)}</span>
        </div>`
     : '';
 
-  return `<div class="flex items-center gap-2 px-2.5 py-2 border-t border-slate-100">
-    <button data-toggle="1" class="caret ${open ? 'open' : ''}" aria-label="展开或收起全部">›</button>
-    ${info}
-    <div class="flex-1 grid gap-1" style="grid-template-columns:repeat(${len},minmax(0,1fr))">
-      ${it.codes.map(c => `<div class="ball sm">${esc(c)}</div>`).join('')}
+  return `<div class="relative border-t border-slate-100">
+    <button data-toggle="1" class="caret absolute left-1 top-1/2 -translate-y-1/2 ${open ? 'open' : ''}" aria-label="展开或收起全部">›</button>
+    <div class="px-4 py-1">
+      ${info}
+      ${ballsHtml(it.codes, 'list')}
     </div>
   </div>`;
 }
@@ -221,6 +253,12 @@ function render() {
   $('foldBar').classList.toggle('hidden', !STATE.folded);
   $('foldBar').classList.toggle('flex', STATE.folded);
 
+  const total = LENS[STATE.game];
+  const label = (STATE.hideTail ? BIG_N : total) + '位';
+  const l1 = $('tailLabel'), l2 = $('tailLabel2');
+  if (l1) l1.textContent = label;
+  if (l2) l2.textContent = label;
+
   const s = $('statusLine');
   if (STATE.error) {
     s.textContent = STATE.error;
@@ -235,7 +273,6 @@ function render() {
 
   const main = $('main');
   const list = listFor(STATE.game);
-  const len = LENS[STATE.game];
 
   if (!list.length) {
     main.innerHTML = `<section class="bg-white rounded-3xl p-6 text-center shadow-sm">
@@ -257,9 +294,7 @@ function render() {
       <span class="text-[11px] text-slate-400">最新一期</span>
       <button id="btnCopy" class="px-3 py-1.5 rounded-full bg-slate-100 text-slate-500 text-xs font-medium active:scale-95 transition">复制</button>
     </div>
-    <div class="grid gap-1.5 mt-2.5" style="grid-template-columns:repeat(${len},minmax(0,1fr))">
-      ${latest.codes.map(c => `<div class="ball">${esc(c)}</div>`).join('')}
-    </div>
+    <div class="mt-2.5">${ballsHtml(latest.codes, 'latest')}</div>
   </section>
 
   <section class="mt-3">
@@ -281,7 +316,8 @@ function render() {
 }
 
 async function copyLatest(it) {
-  const text = `${NAMES[STATE.game]} 第${it.issue}期 ${it.date}\n${it.codes.join(' ')}`;
+  const codes = STATE.hideTail ? it.codes.slice(0, BIG_N) : it.codes;
+  const text = `${NAMES[STATE.game]} 第${it.issue}期 ${it.date}\n${codes.join(' ')}`;
   try {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
@@ -355,11 +391,25 @@ document.querySelectorAll('.tab').forEach(b => {
   };
 });
 
+function toggleTail() {
+  STATE.hideTail = !STATE.hideTail;
+  saveTail();
+  render();
+  toast(STATE.hideTail ? '只显示前 4 位' : '显示全部位数');
+}
+
+$('btnTail').onclick = toggleTail;
+$('btnTail2').onclick = toggleTail;
+
+$('btnColor').onclick = () => {
+  STATE.colorIdx = (STATE.colorIdx + 1) % PALETTES.length;
+  applyPalette(STATE.colorIdx);
+  toast('数字颜色：' + PALETTES[STATE.colorIdx].name);
+};
+$('btnColor2').onclick = $('btnColor').onclick;
+
 $('btnFold').onclick = () => { STATE.folded = true; render(); };
 $('btnFold2').onclick = () => { STATE.folded = false; render(); };
-
-$('btnColor').onclick = nextPalette;
-$('btnColor2').onclick = nextPalette;
 
 $('btnRefresh').onclick = () => { toast('正在刷新…'); loadRemote(); };
 
@@ -372,6 +422,7 @@ $('main').addEventListener('click', e => {
 
 /* ---------- 启动 ---------- */
 loadPalette();
+loadTail();
 render();
 loadRemote();
 </script>
