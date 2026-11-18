@@ -23,135 +23,157 @@
   });
 </script>
 <style>
-  html{-webkit-text-size-adjust:100%}
-  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-  body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
-  .num{font-variant-numeric:tabular-nums}
-  :root{ --ball-bg:#fff1f2; --ball-fg:#e11d48; --ring-color:#e11d48; }
-  .balls{display:flex;align-items:center;justify-content:center;gap:3px}
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;box-sizing:border-box}
+  body{margin:0;background:#f1f5f9;color:#0f172a;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:520px;margin:0 auto;padding-bottom:24px}
+  .hd{padding:8px 12px 4px}
+  .hd-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .title{font-size:19px;font-weight:800;letter-spacing:-0.3px}
+  .tools{display:flex;align-items:center;gap:4px}
+  .rbtn{width:32px;height:32px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#475569}
+  .dot{width:14px;height:14px;border-radius:50%;display:block}
+  .ringdot{width:14px;height:14px;border-radius:50%;display:block;border:2px solid #e11d48}
+  .pbtn{padding:6px 12px;border-radius:999px;background:#fff;border:0;font-size:13px;font-weight:500;color:#475569;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+
+  .tabs{display:flex;gap:8px;margin-top:8px}
+  .tab{flex:1;height:40px;border-radius:12px;border:0;font-size:15px;font-weight:700;background:#fff;color:#64748b}
+  .tab.on{background:#e11d48;color:#fff}
+
+  .row2{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+  .status{font-size:10px;color:#94a3b8;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1}
+  .mini{display:flex;gap:4px;flex-shrink:0}
+  .mini button{padding:4px 8px;border-radius:999px;border:0;background:#fff;font-size:11px;font-weight:600;color:#475569;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+  .mini button.on{background:#e11d48;color:#fff}
+
+  main{padding:0 12px}
+
+  .list{margin-top:2px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+  .row{position:relative;border-top:1px solid #f1f5f9;padding:2px 3px 2px 0}
+  .row:first-child{border-top:0}
+  .row-inner{display:flex;align-items:center;justify-content:center;gap:3px;padding:0 14px}
+  .balls{display:flex;align-items:center;justify-content:center;gap:3px;flex:1;min-width:0}
   .ball{
-    position:relative;flex:0 0 auto;width:12.5%;height:38px;border-radius:10px;--ring-size:34px;
+    flex:0 0 auto;width:12.5%;height:38px;border-radius:10px;
     display:flex;align-items:center;justify-content:center;
-    background:var(--ball-bg);color:var(--ball-fg);
-    font-family:ui-rounded,"SF Pro Rounded","Segoe UI","PingFang SC",system-ui,sans-serif;
     font-weight:700;font-size:21px;line-height:1;font-variant-numeric:tabular-nums;
-    touch-action:manipulation;
   }
-  .ball.xs{ width:6.4%;height:30px;border-radius:7px;--ring-size:26px;font-size:12px }
-  .ball.zoom{ width:18%;height:44px;border-radius:11px;--ring-size:40px;font-size:26px }
-  .ball.blank{ background:#f1f5f9;border:1px dashed #e2e8f0;color:transparent }
-  .ball.circled::after{
-    content:'';position:absolute;left:50%;top:50%;
-    width:var(--ring-size);height:var(--ring-size);
-    margin:calc(var(--ring-size) / -2) 0 0 calc(var(--ring-size) / -2);
-    border:2px solid var(--ring-color);border-radius:50%;pointer-events:none;
-  }
-  .ball.dragging{filter:brightness(.96)}
-  .ball.dragging::before{
-    content:'';position:absolute;left:50%;top:50%;
-    width:var(--ring-size);height:var(--ring-size);
-    margin:calc(var(--ring-size) / -2) 0 0 calc(var(--ring-size) / -2);
-    border:1.8px dashed var(--ring-color);border-radius:50%;opacity:.55;pointer-events:none;
-  }
+  .ball.xs{width:6.4%;height:30px;border-radius:7px;font-size:12px}
+  .ball.zoom{width:18%;height:44px;border-radius:11px;font-size:26px}
+  .ball.blank{background:#f1f5f9 !important;color:transparent !important;border:1px dashed #e2e8f0}
+  .ball.circled{outline:2px solid var(--ring,#e11d48);outline-offset:-2px;border-radius:50%}
+
   .caret{
-    display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:9999px;
-    background:#ecfdf5;color:#059669;font-size:11px;font-weight:900;line-height:1;z-index:1;
+    position:absolute;left:2px;top:50%;transform:translateY(-50%);
+    width:18px;height:18px;border-radius:50%;border:0;
+    background:#ecfdf5;color:#059669;font-size:11px;font-weight:900;line-height:1;
+    display:flex;align-items:center;justify-content:center;
   }
-  .caret.open{transform:rotate(90deg);background:#d1fae5}
-  .fold{
-    display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9999px;
-    background:#fff;color:#64748b;font-size:12px;font-weight:900;line-height:1;box-shadow:0 1px 2px rgba(0,0,0,.06);
+  .caret.on{transform:translateY(-50%) rotate(90deg);background:#d1fae5}
+
+  .info{font-size:10px;line-height:1.2;padding:0 4px 2px 18px;color:#94a3b8}
+  .info b{color:#64748b;font-weight:600}
+
+  .divider{height:3px;background:#cbd5e1}
+  .foot{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:6px;font-size:10px;color:#cbd5e1}
+
+  /* 诊断浮层 */
+  #dbgPanel{
+    position:fixed;left:0;right:0;bottom:0;top:0;z-index:70;display:none;
+    background:rgba(15,23,42,.55);
   }
-  .sec-head{display:flex;align-items:baseline;gap:2px;padding:0 4px;margin-bottom:3px}
-  #scrollTrack{
-    position:fixed;right:2px;top:50%;transform:translateY(-50%);
-    width:8px;height:42vh;border-radius:9999px;background:rgba(148,163,184,.18);z-index:40;touch-action:none;
+  #dbgBox{
+    position:absolute;left:8px;right:8px;bottom:8px;top:60px;
+    background:#0f172a;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;
   }
-  #scrollThumb{width:8px;border-radius:9999px;background:rgba(100,116,139,.65);position:absolute;left:0;top:0}
+  #dbgHead{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;color:#e2e8f0;font-size:12px;border-bottom:1px solid #1e293b}
+  #dbgHead button{padding:5px 10px;border-radius:999px;border:0;font-size:11px;font-weight:700;margin-left:6px}
+  #dbgBody{
+    flex:1;overflow:auto;padding:8px 10px;color:#6ee7b7;font-size:10px;line-height:1.7;
+    font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;
+    -webkit-user-select:text;user-select:text;-webkit-touch-callout:default;
+  }
+
+  #scrollTrack{position:fixed;right:2px;top:50%;transform:translateY(-50%);width:8px;height:42vh;border-radius:999px;background:rgba(148,163,184,.18);z-index:40;touch-action:none}
+  #scrollThumb{width:8px;border-radius:999px;background:rgba(100,116,139,.65);position:absolute;left:0;top:0}
 </style>
 </head>
-<body class="bg-slate-100 text-slate-900">
+<body>
 
-<div class="mx-auto w-full max-w-[520px] pb-6">
-
-  <header class="px-3 pt-2 pb-1">
+<div class="wrap">
+  <div class="hd">
     <div id="headerAll">
-      <div class="flex items-center justify-between gap-2">
-        <h1 class="text-[19px] font-extrabold tracking-tight">开奖号码</h1>
-        <div class="flex items-center gap-1">
-          <button id="btnColor" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center">
-            <span id="colorDot" class="w-3.5 h-3.5 rounded-full" style="background:#e11d48"></span>
-          </button>
-          <button id="btnRing" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center">
-            <span id="ringDot" class="w-3.5 h-3.5 rounded-full" style="border:2px solid #e11d48"></span>
-          </button>
-          <button id="btnDbg" class="w-8 h-8 rounded-full bg-white shadow-sm text-slate-500 text-[13px] font-bold">i</button>
-          <button id="btnFold" class="fold">⌃</button>
-          <button id="btnRefresh" class="px-3 py-1.5 rounded-full bg-white text-slate-600 text-[13px] font-medium shadow-sm">刷新</button>
+      <div class="hd-row">
+        <div class="title">开奖号码</div>
+        <div class="tools">
+          <button id="btnColor" class="rbtn"><span id="colorDot" class="dot" style="background:#e11d48"></span></button>
+          <button id="btnRing" class="rbtn"><span id="ringDot" class="ringdot"></span></button>
+          <button id="btnDbg" class="rbtn">i</button>
+          <button id="btnFold" class="rbtn">⌃</button>
+          <button id="btnRefresh" class="pbtn">刷新</button>
         </div>
       </div>
 
-      <div class="mt-2 grid grid-cols-2 gap-2">
-        <button data-game="qxc" class="tab h-10 rounded-xl font-bold text-[15px] bg-white text-slate-500">七星彩</button>
-        <button data-game="pl5" class="tab h-10 rounded-xl font-bold text-[15px] bg-white text-slate-500">排列五</button>
+      <div class="tabs">
+        <button data-game="qxc" class="tab">七星彩</button>
+        <button data-game="pl5" class="tab">排列五</button>
       </div>
 
-      <div class="mt-1.5 mb-1 flex items-center justify-between gap-2">
-        <p id="statusLine" class="text-[10px] text-slate-400 min-h-[13px] truncate"></p>
-        <div class="flex items-center gap-1 shrink-0">
-          <button id="btnMark" class="h-7 px-2 rounded-full text-[11px] font-semibold shadow-sm bg-white text-slate-500">标记</button>
-          <button id="btnUndo" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm">撤销</button>
-          <button id="btnClear" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm">清除</button>
-          <button id="btnTail" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm">
-            <span id="tailLabel">7位</span>
-          </button>
+      <div class="row2">
+        <div id="statusLine" class="status"></div>
+        <div class="mini">
+          <button id="btnMark">标记</button>
+          <button id="btnUndo">撤销</button>
+          <button id="btnClear">清除</button>
+          <button id="btnTail"><span id="tailLabel">7位</span></button>
         </div>
       </div>
     </div>
 
-    <div id="foldBar" class="hidden items-center justify-end gap-1 py-1">
-      <button id="btnColor2" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center">
-        <span id="colorDot2" class="w-3.5 h-3.5 rounded-full" style="background:#e11d48"></span>
-      </button>
-      <button id="btnRing2" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center">
-        <span id="ringDot2" class="w-3.5 h-3.5 rounded-full" style="border:2px solid #e11d48"></span>
-      </button>
-      <button id="btnDbg2" class="w-8 h-8 rounded-full bg-white shadow-sm text-slate-500 text-[13px] font-bold">i</button>
-      <button id="btnMark2" class="h-7 px-2 rounded-full text-[11px] font-semibold shadow-sm bg-white text-slate-500">标记</button>
-      <button id="btnUndo2" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm">撤销</button>
-      <button id="btnClear2" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm">清除</button>
-      <button id="btnTail2" class="h-7 px-2 rounded-full bg-white text-slate-600 text-[11px] font-semibold shadow-sm">
-        <span id="tailLabel2">7位</span>
-      </button>
-      <button id="btnFold2" class="fold">⌄</button>
+    <div id="foldBar" style="display:none;justify-content:flex-end;gap:4px;padding:4px 0">
+      <button id="btnDbg2" class="rbtn">i</button>
+      <button id="btnMark2" class="mini">标记</button>
+      <button id="btnClear2" class="mini">清除</button>
+      <button id="btnFold2" class="rbtn">⌄</button>
     </div>
-  </header>
+  </div>
 
-  <main id="main" class="px-3"></main>
+  <main id="main"></main>
 
-  <pre id="dbg" class="hidden mx-3 mt-2 p-2 bg-slate-900 text-emerald-300 text-[10px] leading-relaxed rounded-lg overflow-auto" style="max-height:42vh;white-space:pre-wrap"></pre>
-
-  <p class="px-4 mt-2.5 mb-2 text-[10px] leading-relaxed text-slate-400">
+  <p style="padding:10px 16px 0;font-size:10px;line-height:1.6;color:#94a3b8">
     先点「标记」：点数字加圈，长按拖动连线；「撤销」退一步，「清除」全清。<br>
-    点右上 <b>i</b> 看抓取日志。
+    点右上 <b>i</b> 看抓取日志（可复制）。
   </p>
 </div>
 
-<div id="toast" class="fixed left-1/2 -translate-x-1/2 top-3 z-50 hidden"></div>
+<!-- 诊断浮层 -->
+<div id="dbgPanel">
+  <div id="dbgBox">
+    <div id="dbgHead">
+      <span>抓取日志</span>
+      <span>
+        <button id="btnCopyLog" style="background:#334155;color:#e2e8f0">复制</button>
+        <button id="btnCloseLog" style="background:#e11d48;color:#fff">关闭</button>
+      </span>
+    </div>
+    <div id="dbgBody">（暂无日志）</div>
+  </div>
+</div>
+
+<div id="toast" style="position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:80;display:none"></div>
 <div id="scrollTrack"><div id="scrollThumb"></div></div>
-<div id="bootError" class="hidden"></div>
+<div id="bootError" style="display:none"></div>
 
 <script>
 var NAMES = { qxc: '七星彩', pl5: '排列五' };
 var LENS  = { qxc: 7, pl5: 5 };
 var BIG_N = 4;
 var REMOTE_DATA = 'https://rorykosanke-debug.github.io/qxc/data.json';
+var XML_BASE = 'https://kaijiang.500.com/static/info/kaijiang/xml/';
 var LS_COLOR = 'lottery_color_idx';
 var LS_RING  = 'lottery_ring_idx';
 var LS_TAIL  = 'lottery_hide_tail';
 var LS_MARK  = 'lottery_mark_mode';
 var LS_CACHE = 'lottery_data_cache';
-var XML_BASE = 'https://kaijiang.500.com/static/info/kaijiang/xml/';
 
 var DIRECT_SRC = [
   { key: 'qxc', name: '七星彩', len: 7, codes: ['qxc'] },
@@ -160,22 +182,13 @@ var DIRECT_SRC = [
 
 var PALETTES = [
   { name:'玫红', bg:'#fff1f2', fg:'#e11d48', dot:'#e11d48' },
-  { name:'蓝色', bg:'#eff6ff', fg:'#2563eb', dot:'#2563eb' },
-  { name:'绿色', bg:'#ecfdf5', fg:'#059669', dot:'#059669' },
-  { name:'紫色', bg:'#f5f3ff', fg:'#7c3aed', dot:'#7c3aed' },
-  { name:'橙色', bg:'#fff7ed', fg:'#ea580c', dot:'#ea580c' },
-  { name:'金棕', bg:'#fffbeb', fg:'#b45309', dot:'#b45309' }
+  { name:'蓝',   bg:'#eff6ff', fg:'#2563eb', dot:'#2563eb' },
+  { name:'绿',   bg:'#ecfdf5', fg:'#059669', dot:'#059669' },
+  { name:'紫',   bg:'#f5f3ff', fg:'#7c3aed', dot:'#7c3aed' },
+  { name:'橙',   bg:'#fff7ed', fg:'#ea580c', dot:'#ea580c' },
+  { name:'金',   bg:'#fffbeb', fg:'#b45309', dot:'#b45309' }
 ];
-var RING_COLORS = [
-  { name:'玫红', c:'#e11d48' },{ name:'蓝', c:'#2563eb' },{ name:'绿', c:'#059669' },
-  { name:'紫', c:'#7c3aed' },{ name:'橙', c:'#ea580c' },{ name:'金', c:'#d97706' },
-  { name:'黑', c:'#111827' },{ name:'灰', c:'#64748b' }
-];
-
-var TAB_ON  = 'tab h-10 rounded-xl font-bold text-[15px] bg-rose-600 text-white';
-var TAB_OFF = 'tab h-10 rounded-xl font-bold text-[15px] bg-white text-slate-500';
-var BTN_OFF = 'h-7 px-2 rounded-full text-[11px] font-semibold shadow-sm bg-white text-slate-500';
-var BTN_ON  = 'h-7 px-2 rounded-full text-[11px] font-semibold shadow-sm bg-rose-600 text-white';
+var RING_COLORS = ['#e11d48', '#2563eb', '#059669', '#7c3aed', '#ea580c', '#d97706', '#111827', '#64748b'];
 
 var STATE = {
   game: 'qxc',
@@ -183,15 +196,14 @@ var STATE = {
   loading: true, error: '', source: '',
   folded: false, expandAll: false, hideTail: false, markMode: false,
   colorIdx: 0, ringIdx: -1,
-  circled: new Set(), links: [], undo: [],
-  dbgOpen: false
+  circled: {}, links: [], undo: []
 };
 
 var LOGS = [];
 function log(s) {
   LOGS.push(s);
-  if (LOGS.length > 60) LOGS.shift();
-  var el = document.getElementById('dbg');
+  if (LOGS.length > 80) LOGS.shift();
+  var el = document.getElementById('dbgBody');
   if (el) el.textContent = LOGS.join('\n');
 }
 function $(id) { return document.getElementById(id); }
@@ -204,35 +216,30 @@ var toastTimer = null;
 function toast(msg) {
   var t = $('toast');
   if (!t) return;
-  t.innerHTML = '<div class="px-3 py-2 rounded-full bg-slate-900/90 text-white text-[13px]">' + esc(msg) + '</div>';
-  t.classList.remove('hidden');
+  t.innerHTML = '<div style="background:rgba(15,23,42,.9);color:#fff;font-size:13px;padding:8px 14px;border-radius:999px">' + esc(msg) + '</div>';
+  t.style.display = 'block';
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function () { t.classList.add('hidden'); }, 1500);
+  toastTimer = setTimeout(function () { t.style.display = 'none'; }, 1500);
 }
 
-/* ---------- 配色 ---------- */
-function applyPalette(idx) {
-  var p = PALETTES[idx % PALETTES.length];
-  document.documentElement.style.setProperty('--ball-bg', p.bg);
-  document.documentElement.style.setProperty('--ball-fg', p.fg);
+/* ---------- 颜色 ---------- */
+function palette() { return PALETTES[STATE.colorIdx % PALETTES.length]; }
+function ringColor() {
+  if (STATE.ringIdx >= 0) return RING_COLORS[STATE.ringIdx % RING_COLORS.length];
+  return palette().fg;
+}
+function applyChrome() {
+  var p = palette(), rc = ringColor();
   var d1 = $('colorDot'), d2 = $('colorDot2');
   if (d1) d1.style.background = p.dot;
   if (d2) d2.style.background = p.dot;
-  try { localStorage.setItem(LS_COLOR, String(idx % PALETTES.length)); } catch (e) {}
-  applyRing();
-}
-function ringColor() {
-  if (STATE.ringIdx >= 0) return RING_COLORS[STATE.ringIdx % RING_COLORS.length].c;
-  return PALETTES[STATE.colorIdx % PALETTES.length].fg;
-}
-function applyRing() {
-  var c = ringColor();
-  document.documentElement.style.setProperty('--ring-color', c);
   var r1 = $('ringDot'), r2 = $('ringDot2');
-  if (r1) r1.style.borderColor = c;
-  if (r2) r2.style.borderColor = c;
+  if (r1) r1.style.borderColor = rc;
+  if (r2) r2.style.borderColor = rc;
+  document.documentElement.style.setProperty('--ring', rc);
   drawLinks();
 }
+function savePref(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 function loadPrefs() {
   var ci = 0, ri = -1;
   try {
@@ -245,18 +252,16 @@ function loadPrefs() {
   } catch (e) {}
   STATE.colorIdx = ci % PALETTES.length;
   STATE.ringIdx = (isNaN(ri) || ri < 0) ? -1 : ri % RING_COLORS.length;
-  applyPalette(STATE.colorIdx);
 }
-function savePref(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 
 /* ---------- 解析 ---------- */
 function toCodes(raw, len) {
   var s = Array.isArray(raw) ? raw.join(' ') : String(raw === null || raw === undefined ? '' : raw);
-  var tokens = s.split(/[\s,，、+|]+/).filter(Boolean);
+  var tokens = s.split(/[\s,，、+|]+/).filter(function (t) { return !!t; });
   if (tokens.length === len) {
-    var allOne = true;
-    for (var i = 0; i < tokens.length; i++) if (!/^\d$/.test(tokens[i])) allOne = false;
-    if (allOne) return tokens;
+    var ok = true;
+    for (var i = 0; i < tokens.length; i++) if (!/^\d$/.test(tokens[i])) ok = false;
+    if (ok) return tokens;
   }
   var digits = s.replace(/\D/g, '');
   if (digits.length < len) return null;
@@ -277,12 +282,15 @@ function parseXmlRows(text, len) {
     var issue = get('expect') || get('issue');
     var date = (get('opendate') || get('date')).slice(0, 10);
     var codes = toCodes(get('opencode') || get('code'), len);
-    if (issue && date && codes && !seen[issue]) { seen[issue] = 1; out.push({ issue: issue, date: date, codes: codes }); }
+    if (issue && date && codes && !seen[issue]) {
+      seen[issue] = 1;
+      out.push({ issue: issue, date: date, codes: codes });
+    }
   }
   return out.sort(function (a, b) { return Number(b.issue) - Number(a.issue); });
 }
 function normalize(json) {
-  var remote = { qxc: [], pl5: [], updatedAt: json.updatedAt || new Date().toISOString() };
+  var r = { qxc: [], pl5: [], updatedAt: json.updatedAt || new Date().toISOString() };
   ['qxc', 'pl5'].forEach(function (k) {
     var arr = Array.isArray(json[k]) ? json[k] : [];
     for (var i = 0; i < arr.length; i++) {
@@ -290,10 +298,10 @@ function normalize(json) {
       var codes = toCodes(it.codes || it.result || it.code || it.numbers, LENS[k]);
       var issue = String(it.issue || it.qihao || '').trim();
       if (!codes || !issue) continue;
-      remote[k].push({ issue: issue, date: String(it.date || '').slice(0, 10), codes: codes });
+      r[k].push({ issue: issue, date: String(it.date || '').slice(0, 10), codes: codes });
     }
   });
-  return remote;
+  return r;
 }
 function listFor(game) {
   return STATE.remote[game].slice().sort(function (a, b) {
@@ -307,7 +315,7 @@ function fmtTime(iso) {
   return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
 
-/* ---------- 连线层 ---------- */
+/* ---------- 连线 ---------- */
 var SVG_NS = 'http://www.w3.org/2000/svg';
 var dragFrom = null, dragX = 0, dragY = 0;
 function layer() {
@@ -330,95 +338,95 @@ function drawLinks() {
   s.setAttribute('height', String(document.documentElement.scrollHeight));
   while (s.firstChild) s.removeChild(s.firstChild);
   var color = ringColor();
-  function addLine(p1, p2, dashed) {
-    var line = document.createElementNS(SVG_NS, 'line');
-    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
-    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
-    line.setAttribute('stroke', color);
-    line.setAttribute('stroke-width', '2.2');
-    line.setAttribute('stroke-linecap', 'round');
-    line.setAttribute('opacity', dashed ? '0.7' : '0.9');
-    if (dashed) line.setAttribute('stroke-dasharray', '6 5');
-    s.appendChild(line);
+  function line(p1, p2, dashed) {
+    var el = document.createElementNS(SVG_NS, 'line');
+    el.setAttribute('x1', p1.x); el.setAttribute('y1', p1.y);
+    el.setAttribute('x2', p2.x); el.setAttribute('y2', p2.y);
+    el.setAttribute('stroke', color);
+    el.setAttribute('stroke-width', '2.2');
+    el.setAttribute('stroke-linecap', 'round');
+    el.setAttribute('opacity', dashed ? '0.7' : '0.9');
+    if (dashed) el.setAttribute('stroke-dasharray', '6 5');
+    s.appendChild(el);
   }
   for (var i = 0; i < STATE.links.length; i++) {
     var l = STATE.links[i];
     var a = cellEl(l.a), b = cellEl(l.b);
-    if (a && b) addLine(centerDoc(a), centerDoc(b), false);
+    if (a && b) line(centerDoc(a), centerDoc(b), false);
   }
   if (dragFrom) {
     var da = cellEl(dragFrom);
-    if (da) addLine(centerDoc(da), { x: dragX, y: dragY }, true);
+    if (da) line(centerDoc(da), { x: dragX, y: dragY }, true);
   }
 }
 
 /* ---------- 渲染 ---------- */
 function ballsHtml(it) {
+  var p = palette();
+  var style = 'background:' + p.bg + ';color:' + p.fg + ';';
   var codes = it.codes;
   var shown = STATE.hideTail ? codes.slice(0, BIG_N) : codes;
-  var inner = '';
+  var out = '';
   for (var i = 0; i < shown.length; i++) {
-    var cls = 'ball';
-    if (STATE.hideTail) cls += ' zoom';
-    else if (i >= BIG_N) cls += ' xs';
+    var extra = '';
+    if (STATE.hideTail) extra = 'zoom';
+    else if (i >= BIG_N) extra = 'xs';
     var key = it.issue + ':' + i;
-    if (STATE.circled.has(key)) cls += ' circled';
-    inner += '<div class="' + cls + '" data-cell="' + esc(key) + '">' + esc(shown[i]) + '</div>';
+    var circled = STATE.circled[key] ? ' circled' : '';
+    out += '<div class="ball ' + extra + circled + '" data-cell="' + esc(key) + '" style="' + style + '">' + esc(shown[i]) + '</div>';
   }
-  return '<div class="balls">' + inner + '</div>';
+  return '<div class="balls">' + out + '</div>';
 }
 function blankRowHtml() {
   var count = STATE.hideTail ? BIG_N : LENS[STATE.game];
-  var cells = '';
+  var out = '';
   for (var i = 0; i < count; i++) {
-    var cls = 'ball blank';
-    if (STATE.hideTail) cls += ' zoom';
-    else if (i >= BIG_N) cls += ' xs';
-    cells += '<div class="' + cls + '"></div>';
+    var extra = '';
+    if (STATE.hideTail) extra = 'zoom';
+    else if (i >= BIG_N) extra = 'xs';
+    out += '<div class="ball blank ' + extra + '"></div>';
   }
-  return '<div class="relative border-t border-slate-100"><div class="px-3.5"><div class="balls">' + cells + '</div></div></div>';
+  return '<div class="row"><div class="row-inner"><div class="balls">' + out + '</div></div></div>';
 }
 function rowHtml(it) {
   var open = STATE.expandAll;
-  var info = open
-    ? '<div class="mb-0.5 text-[10px] leading-tight pl-1"><span class="num font-semibold text-slate-500">' +
-      esc(it.issue) + '</span><span class="num text-slate-300 ml-1">' + esc(it.date) + '</span></div>'
-    : '';
-  return '<div class="relative border-t border-slate-100">' +
-    '<button data-toggle="1" class="caret absolute left-0.5 top-1/2 -translate-y-1/2 ' + (open ? 'open' : '') + '">›</button>' +
-    '<div class="px-3.5">' + info + ballsHtml(it) + '</div></div>';
+  var info = open ? '<div class="info"><b>' + esc(it.issue) + '</b> ' + esc(it.date) + '</div>' : '';
+  return '<div class="row">' +
+    '<button data-toggle="1" class="caret' + (open ? ' on' : '') + '">›</button>' +
+    '<div class="row-inner">' + ballsHtml(it) + '</div>' + info + '</div>';
 }
 
 function render() {
   var tabs = document.querySelectorAll('.tab');
   for (var i = 0; i < tabs.length; i++) {
-    tabs[i].className = (tabs[i].getAttribute('data-game') === STATE.game) ? TAB_ON : TAB_OFF;
+    tabs[i].className = (tabs[i].getAttribute('data-game') === STATE.game) ? 'tab on' : 'tab';
   }
 
   var ha = $('headerAll'), fb = $('foldBar');
-  if (ha) ha.classList.toggle('hidden', STATE.folded);
-  if (fb) { fb.classList.toggle('hidden', !STATE.folded); fb.classList.toggle('flex', STATE.folded); }
+  if (ha) ha.style.display = STATE.folded ? 'none' : 'block';
+  if (fb) fb.style.display = STATE.folded ? 'flex' : 'none';
 
   var label = (STATE.hideTail ? BIG_N : LENS[STATE.game]) + '位';
   var l1 = $('tailLabel'), l2 = $('tailLabel2');
   if (l1) l1.textContent = label;
   if (l2) l2.textContent = label;
 
-  ['btnMark', 'btnMark2'].forEach(function (id) {
-    var b = $(id);
-    if (!b) return;
-    b.className = STATE.markMode ? BTN_ON : BTN_OFF;
+  var markBtns = [$('btnMark'), $('btnMark2')];
+  for (var mi = 0; mi < markBtns.length; mi++) {
+    var b = markBtns[mi];
+    if (!b) continue;
+    b.className = STATE.markMode ? 'on' : '';
     b.textContent = STATE.markMode ? '标记中' : '标记';
-  });
+  }
 
   var s = $('statusLine');
   if (s) {
-    if (STATE.error) { s.textContent = STATE.error; s.className = 'text-[10px] text-rose-500 min-h-[13px] truncate'; }
-    else if (STATE.loading) { s.textContent = '正在抓取数据…'; s.className = 'text-[10px] text-slate-400 min-h-[13px] truncate'; }
+    if (STATE.error) { s.textContent = STATE.error; s.style.color = '#e11d48'; }
+    else if (STATE.loading) { s.textContent = '正在抓取数据…'; s.style.color = '#94a3b8'; }
     else {
       var src = STATE.source ? '（' + STATE.source + '）' : '';
       s.textContent = (STATE.remote.updatedAt ? '更新于 ' + fmtTime(STATE.remote.updatedAt) : '') + src;
-      s.className = 'text-[10px] text-slate-400 min-h-[13px] truncate';
+      s.style.color = '#94a3b8';
     }
   }
 
@@ -427,10 +435,10 @@ function render() {
   var list = listFor(STATE.game);
 
   if (!list.length) {
-    main.innerHTML = '<section class="bg-white rounded-2xl p-6 text-center shadow-sm">' +
-      '<div class="text-4xl">🎯</div>' +
-      '<p class="mt-3 font-semibold">还没有' + NAMES[STATE.game] + '数据</p>' +
-      '<p class="mt-1.5 text-[11px] text-slate-400">点右上 <b>i</b> 看抓取日志，或点「刷新」重试</p></section>';
+    main.innerHTML = '<div style="background:#fff;border-radius:14px;padding:24px;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,.06)">' +
+      '<div style="font-size:34px">🎯</div>' +
+      '<div style="margin-top:10px;font-weight:700">还没有' + NAMES[STATE.game] + '数据</div>' +
+      '<div style="margin-top:6px;font-size:11px;color:#94a3b8">点右上 <b>i</b> 看抓取日志，或点「刷新」</div></div>';
     updateScrollBar();
     return;
   }
@@ -439,47 +447,44 @@ function render() {
   var blanks = 4 - (n % 4);
   var rows = [];
   for (var k = 0; k < n; k++) rows.push(rowHtml(list[k]));
-  for (var b = 0; b < blanks; b++) rows.push(blankRowHtml());
+  for (var b2 = 0; b2 < blanks; b2++) rows.push(blankRowHtml());
 
   var html = '';
   for (var j = 0; j < rows.length; j++) {
     html += rows[j];
-    if ((j + 1) % 4 === 0 && j !== rows.length - 1) html += '<div class="h-[2.5px] bg-slate-300/80"></div>';
+    if ((j + 1) % 4 === 0 && j !== rows.length - 1) html += '<div class="divider"></div>';
   }
 
-  main.innerHTML = '<section class="mt-0.5">' +
-    (STATE.expandAll
-      ? '<div class="sec-head"><h2 class="text-[13px] font-semibold text-slate-500">开奖记录</h2>' +
-        '<span class="text-[10px] text-slate-400 num">共 ' + n + ' 期 · 空白 ' + blanks + '</span></div>'
-      : '') +
-    '<div class="bg-white rounded-xl overflow-hidden shadow-sm">' + html + '</div>' +
-    '<div class="flex items-center justify-center gap-4 mt-1.5">' +
-      '<span class="text-[10px] text-slate-300">圈 ' + STATE.circled.size + ' · 线 ' + STATE.links.length + '</span>' +
-    '</div></section>';
+  main.innerHTML =
+    (STATE.expandAll ? '<div style="font-size:11px;color:#94a3b8;padding:2px 4px 4px">开奖记录 · 共 ' + n + ' 期 · 空白 ' + blanks + '</div>' : '') +
+    '<div class="list">' + html + '</div>' +
+    '<div class="foot"><span>圈 ' + Object.keys(STATE.circled).length + ' · 线 ' + STATE.links.length + '</span></div>';
+
+  var cells = document.querySelectorAll('[data-cell]');
+  log('渲染完成：' + cells.length + ' 个号码格（' + NAMES[STATE.game] + ' ' + n + ' 期）');
 
   drawLinks();
   updateScrollBar();
 }
 
-/* ---------- 圆圈增删（带撤销记录） ---------- */
+/* ---------- 圆圈 ---------- */
 function setCircle(key, on, record) {
   var el = cellEl(key);
   if (on) {
-    STATE.circled.add(key);
-    if (el) el.classList.add('circled');
+    STATE.circled[key] = 1;
+    if (el) el.className += ' circled';
     if (record) STATE.undo.push({ t: 'add', key: key });
   } else {
-    STATE.circled.delete(key);
-    if (el) el.classList.remove('circled');
+    delete STATE.circled[key];
+    if (el) el.className = el.className.replace(' circled', '');
     if (record) STATE.undo.push({ t: 'del', key: key });
   }
 }
-
 function undoLast() {
   var act = STATE.undo.pop();
   if (!act) { toast('没有可撤销的操作'); return; }
-  if (act.t === 'add') { STATE.circled.delete(act.key); }
-  else if (act.t === 'del') { STATE.circled.add(act.key); }
+  if (act.t === 'add') delete STATE.circled[act.key];
+  else if (act.t === 'del') STATE.circled[act.key] = 1;
   else if (act.t === 'link') {
     var arr = [];
     for (var i = 0; i < STATE.links.length; i++) {
@@ -491,17 +496,16 @@ function undoLast() {
   render();
   toast('已撤销上一步');
 }
-
 function clearAll() {
-  if (!STATE.circled.size && !STATE.links.length) { toast('没有可清除的标记'); return; }
-  STATE.circled.clear();
+  if (!Object.keys(STATE.circled).length && !STATE.links.length) { toast('没有可清除的标记'); return; }
+  STATE.circled = {};
   STATE.links = [];
   STATE.undo = [];
   render();
   toast('已清除全部圆圈和连线');
 }
 
-/* ---------- 触摸交互 ---------- */
+/* ---------- 触摸 ---------- */
 var press = { key: null, x0: 0, y0: 0, moved: false, dragging: false, timer: null, was: false };
 var lastTouchAt = 0;
 
@@ -509,10 +513,9 @@ function pressStart(key, x, y) {
   clearTimeout(press.timer);
   press.key = key; press.x0 = x; press.y0 = y;
   press.moved = false; press.dragging = false;
-  press.was = STATE.circled.has(key);
+  press.was = !!STATE.circled[key];
   if (!STATE.markMode) return;
-
-  if (!press.was) setCircle(key, true, true);   // 按下立刻出圈
+  if (!press.was) setCircle(key, true, true);
 
   press.timer = setTimeout(function () {
     if (!press.key || press.moved) return;
@@ -521,21 +524,20 @@ function pressStart(key, x, y) {
     dragX = press.x0 + window.scrollX;
     dragY = press.y0 + window.scrollY;
     var c = cellEl(press.key);
-    if (c) c.classList.add('dragging');
+    if (c) c.className += ' dragging';
     if (navigator.vibrate) navigator.vibrate(12);
     drawLinks();
   }, 300);
 }
-
 function pressMove(x, y) {
   if (!press.key) return false;
   var dx = x - press.x0, dy = y - press.y0;
-  if (Math.sqrt(dx * dx + dy * dy) > 22 && !press.dragging) {
+  if (!press.dragging && Math.sqrt(dx * dx + dy * dy) > 22) {
     press.moved = true;
     if (!press.was) {
-      STATE.circled.delete(press.key);
+      delete STATE.circled[press.key];
       var el = cellEl(press.key);
-      if (el) el.classList.remove('circled');
+      if (el) el.className = el.className.replace(' circled', '');
       if (STATE.undo.length) {
         var last = STATE.undo[STATE.undo.length - 1];
         if (last && last.t === 'add' && last.key === press.key) STATE.undo.pop();
@@ -550,12 +552,9 @@ function pressMove(x, y) {
   drawLinks();
   return true;
 }
-
 function pressEnd(x, y) {
   var wasDragging = press.dragging;
-  var from = press.key;
-  var was = press.was;
-  var moved = press.moved;
+  var from = press.key, was = press.was, moved = press.moved;
   clearTimeout(press.timer);
   if (!from) { press.key = null; return; }
 
@@ -564,7 +563,7 @@ function pressEnd(x, y) {
     var target = el && el.closest ? el.closest('[data-cell]') : null;
     var toKey = target ? target.getAttribute('data-cell') : null;
     var srcEl = cellEl(from);
-    if (srcEl) srcEl.classList.remove('dragging');
+    if (srcEl) srcEl.className = srcEl.className.replace(' dragging', '');
 
     if (toKey && toKey !== from) {
       var exists = false;
@@ -579,18 +578,14 @@ function pressEnd(x, y) {
       }
     }
   } else if (!moved && STATE.markMode && was) {
-    setCircle(from, false, true);   // 二次点击取消
+    setCircle(from, false, true);
   }
 
-  press.key = null;
-  dragFrom = null;
-  press.dragging = false;
+  press.key = null; dragFrom = null; press.dragging = false;
   drawLinks();
 }
-
-var GHOST_MS = 1000;
 function isGhost(e) {
-  if (Date.now() - lastTouchAt < GHOST_MS) return true;
+  if (Date.now() - lastTouchAt < 1000) return true;
   if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return true;
   return false;
 }
@@ -602,28 +597,22 @@ document.addEventListener('touchstart', function (e) {
   var t = e.touches[0];
   pressStart(cell.getAttribute('data-cell'), t.clientX, t.clientY);
 }, { passive: true });
-
 document.addEventListener('touchmove', function (e) {
   lastTouchAt = Date.now();
   if (!press.key) return;
   var t = e.touches[0];
   if (pressMove(t.clientX, t.clientY) && e.cancelable) e.preventDefault();
 }, { passive: false });
-
 document.addEventListener('touchend', function (e) {
   lastTouchAt = Date.now();
   if (!press.key) return;
   var t = e.changedTouches[0];
   pressEnd(t.clientX, t.clientY);
 }, { passive: true });
-
 document.addEventListener('touchcancel', function () {
   lastTouchAt = Date.now();
-  press.key = null;
-  dragFrom = null;
-  drawLinks();
+  press.key = null; dragFrom = null; drawLinks();
 }, { passive: true });
-
 document.addEventListener('mousedown', function (e) {
   if (isGhost(e)) return;
   var cell = e.target.closest ? e.target.closest('[data-cell]') : null;
@@ -640,9 +629,6 @@ document.addEventListener('mouseup', function (e) {
 });
 document.addEventListener('contextmenu', function (e) {
   if (e.target.closest && e.target.closest('[data-cell],[data-toggle]')) e.preventDefault();
-});
-document.addEventListener('selectstart', function (e) {
-  if (e.target.closest && e.target.closest('[data-cell]')) e.preventDefault();
 });
 
 /* ---------- 滑动条 ---------- */
@@ -670,16 +656,13 @@ function sbJump(clientY) {
   window.scrollTo(0, ratio * maxScroll);
   updateScrollBar();
 }
-(function initSB() {
+(function () {
   var track = $('scrollTrack');
   if (!track) return;
   var dragging = false;
   track.addEventListener('touchstart', function (e) { dragging = true; sbJump(e.touches[0].clientY); e.preventDefault(); }, { passive: false });
   track.addEventListener('touchmove', function (e) { if (!dragging) return; sbJump(e.touches[0].clientY); e.preventDefault(); }, { passive: false });
   track.addEventListener('touchend', function () { dragging = false; }, { passive: true });
-  track.addEventListener('mousedown', function (e) { if (isGhost(e)) return; dragging = true; sbJump(e.clientY); });
-  document.addEventListener('mousemove', function (e) { if (isGhost(e)) return; if (dragging) sbJump(e.clientY); });
-  document.addEventListener('mouseup', function () { dragging = false; });
   window.addEventListener('scroll', updateScrollBar, { passive: true });
   updateScrollBar();
 })();
@@ -693,7 +676,6 @@ function withTimeout(promise, ms) {
 function fetchDirect() {
   var out = { qxc: [], pl5: [], updatedAt: new Date().toISOString() };
   var any = false;
-
   function oneGame(g) {
     var idx = 0;
     function nextCode() {
@@ -705,7 +687,7 @@ function fetchDirect() {
         log('  HTTP ' + res.status);
         if (!res.ok) return nextCode();
         return res.text().then(function (text) {
-          log('  ' + text.length + ' 字节，开头：' + text.slice(0, 70).replace(/\s+/g, ' '));
+          log('  ' + text.length + ' 字节，开头：' + text.slice(0, 50).replace(/\s+/g, ' '));
           var items = parseXmlRows(text, g.len).slice(0, 30);
           log('  解析 ' + items.length + ' 期' + (items.length ? '，最新 ' + items[0].issue : ''));
           return items.length ? items : nextCode();
@@ -717,7 +699,6 @@ function fetchDirect() {
     }
     return nextCode();
   }
-
   var chain = Promise.resolve();
   DIRECT_SRC.forEach(function (g) {
     chain = chain.then(function () {
@@ -728,7 +709,6 @@ function fetchDirect() {
   });
   return chain.then(function () { return any ? out : null; });
 }
-
 function readCache() {
   try {
     var raw = localStorage.getItem(LS_CACHE);
@@ -739,7 +719,6 @@ function readCache() {
 function writeCache(remote) {
   try { localStorage.setItem(LS_CACHE, JSON.stringify(remote)); } catch (e) {}
 }
-
 function loadRemote() {
   STATE.loading = true;
   STATE.error = '';
@@ -753,4 +732,60 @@ function loadRemote() {
       STATE.remote = direct;
       STATE.source = '手机直连';
       writeCache(direct);
-      STATE.loading = false
+      STATE.loading = false;
+      render();
+      return null;
+    }
+    log('直连失败，改用线上 data.json');
+    return withTimeout(fetch(REMOTE_DATA + '?v=' + Date.now(), { cache: 'no-store' }), 12000)
+      .then(function (res) {
+        log('  线上 HTTP ' + res.status);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (j) {
+        var nm = normalize(j);
+        log('  线上解析 ' + nm.qxc.length + ' / ' + nm.pl5.length + ' 期');
+        if (!nm.qxc.length && !nm.pl5.length) throw new Error('线上为空');
+        STATE.remote = nm;
+        STATE.source = '线上';
+        writeCache(nm);
+        STATE.loading = false;
+        render();
+        return null;
+      });
+  }).catch(function (e) {
+    log('线上失败：' + (e && e.message ? e.message : String(e)));
+    return withTimeout(fetch('./data.json?v=' + Date.now(), { cache: 'no-store' }), 8000)
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (j) {
+        STATE.remote = normalize(j);
+        STATE.source = '包内快照';
+        STATE.loading = false;
+        render();
+      });
+  }).catch(function () {
+    var cache = readCache();
+    if (cache) {
+      STATE.remote = cache;
+      STATE.source = '本地缓存';
+      STATE.error = '网络不通，显示上次数据';
+    } else {
+      STATE.error = '连不上数据源';
+    }
+    STATE.loading = false;
+    render();
+  });
+}
+
+/* ---------- 日志浮层（点开就固定，不自动关） ---------- */
+function openLog() {
+  var p = $('dbgPanel');
+  p.style.display = 'block';
+  var body = $('dbgBody');
+  body.textContent = LOGS.length ? LOGS.join('\n') : '（暂无日志，先点一次刷新）';
+}
+function closeLog() { $('dbgPanel').style.displ
