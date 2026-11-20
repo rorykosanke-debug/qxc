@@ -47,6 +47,9 @@ header.fold .tabs,header.fold .tools,header.fold .meta{display:none}
 .digit{display:inline-flex;align-items:center;justify-content:center;font-weight:800;line-height:1;flex:0 0 auto;margin-right:4px}
 .digit.hid{background:#f2f4f8;border:1px dashed #dfe3ea}
 .digit.circled{box-shadow:0 0 0 3px var(--ring,#e01340)}
+.digit.slot{background:#fbfcfe;border:1px dashed #d3dae5;color:#3a4150}
+.digit.slot.filled{border-style:solid}
+.digit.slot.active{box-shadow:0 0 0 2px #e6133f}
 body.markmode .digit{touch-action:none}
 .empty{padding:46px 24px;text-align:center;color:#a2a9b6;font-size:13px}
 #logMask{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(18,22,30,.62);z-index:50;display:none;padding:calc(env(safe-area-inset-top) + 12px) 10px calc(env(safe-area-inset-bottom) + 12px)}
@@ -56,6 +59,14 @@ body.markmode .digit{touch-action:none}
 .loghead h2{margin:0;font-size:15px;flex:1 1 auto}
 .btnlog{height:30px;padding:0 15px;border-radius:999px;background:#ff3b5c;color:#fff;font-size:13px;font-weight:700;margin-left:8px}
 .logbody{flex:1 1 auto;overflow-y:auto;padding:10px 12px;font-family:monospace;font-size:11px;line-height:1.6;color:#8ef0b0;-webkit-user-select:text;user-select:text}
+#pad{position:fixed;left:0;right:0;bottom:0;z-index:70;background:#fff;border-top:1px solid #e6e8ee;padding:8px 10px calc(env(safe-area-inset-bottom) + 8px);transform:translateY(115%);transition:transform .2s}
+#pad.show{transform:translateY(0)}
+.padhead{display:flex;align-items:center;font-size:13px;color:#6b7385;margin-bottom:4px}
+.padhead span{flex:1 1 auto}
+.padhead button{height:28px;padding:0 12px;border-radius:999px;background:#f1f3f7;font-size:13px;font-weight:700;margin-left:6px}
+.padbox{display:flex;flex-wrap:wrap}
+.padbox button{flex:0 0 20%;height:42px;font-size:19px;font-weight:800;color:#1d2430;border-radius:10px}
+.padbox button:active{background:#f1f3f7}
 #toast{position:fixed;left:50%;bottom:70px;transform:translate(-50%,10px);background:rgba(23,26,33,.95);color:#fff;font-size:13px;padding:9px 16px;border-radius:999px;opacity:0;transition:.18s;z-index:60;max-width:82%;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 </style>
@@ -89,13 +100,20 @@ setTimeout(function(){if(!window.__boot){var b=document.getElementById('errBar')
       <button id="bClear" class="chip">清除</button>
       <button id="bHide" class="chip">隐藏</button>
     </div>
-    <div id="meta" class="meta">v5 · 准备中…</div>
+    <div id="meta" class="meta">v6 · 准备中…</div>
   </header>
   <main id="listWrap"><div id="listInner">
     <svg id="lineLayer"><g id="linesG"></g><line id="tempLine" style="display:none"></line></svg>
     <div class="card"><div id="rows"></div></div>
   </div></main>
   <div id="toast"></div>
+  <div id="pad">
+    <div class="padhead"><span id="padTip">点空格填数字</span><button id="padClear">清空</button><button id="padClose">完成</button></div>
+    <div class="padbox" id="padBox">
+      <button class="k" data-d="0">0</button><button class="k" data-d="1">1</button><button class="k" data-d="2">2</button><button class="k" data-d="3">3</button><button class="k" data-d="4">4</button>
+      <button class="k" data-d="5">5</button><button class="k" data-d="6">6</button><button class="k" data-d="7">7</button><button class="k" data-d="8">8</button><button class="k" data-d="9">9</button>
+    </div>
+  </div>
   <div id="logMask"><div class="logbox">
     <div class="loghead"><h2>抓取日志</h2><button id="logCopy" class="btnlog">复制</button><button id="logClose" class="btnlog">关闭</button></div>
     <div id="logBody" class="logbody"></div>
@@ -109,6 +127,7 @@ function p2(n){n=''+n;return n.length<2?'0'+n:n}
 function now(){var d=new Date();return p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds())}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function upTo(el,c){while(el&&el.nodeType==1){if((' '+el.className+' ').indexOf(' '+c+' ')>=0)return el;el=el.parentNode}return null}
+function qs(s){return document.querySelectorAll(s)}
 
 var buf=[];
 function log(s){buf.push(s);if(buf.length>300)buf.shift();var b=$('logBody');if(!b)return;var d=document.createElement('div');d.textContent=s;b.appendChild(d);while(b.childNodes.length>300)b.removeChild(b.firstChild);b.scrollTop=b.scrollHeight}
@@ -125,7 +144,7 @@ var THEMES=[['#fde9ee','#e01340'],['#e8f1ff','#1565c0'],['#e6f8ee','#13884f'],['
 var RING=['#e01340','#ff9500','#0a84ff','#34c759','#ff2d95','#af52de','#ff7a1a','#00c7be'];
 var thIdx=0,ringOff=0;
 function ring(){return RING[ringOff]}
-var S={type:'qxc',data:{qxc:[],plw:[]},blank:{qxc:4,plw:4},mark:0,hide:0,c:{},L:[],U:[],seq:1,busy:0};
+var S={type:'qxc',data:{qxc:[],plw:[]},blank:{qxc:4,plw:4},mark:0,hide:0,c:{},L:[],U:[],seq:1,busy:0,bv:{}};
 function tn(t){return t=='plw'?'排列五':'七星彩'}
 function want(t){return t=='plw'?5:7}
 function setStatus(s){var e=$('meta');if(e)e.textContent=s}
@@ -148,7 +167,7 @@ function render(toNew){
   var rows=S.data[S.type]||[],box=$('rows');if(!box)return;
   var wrap=$('listWrap'),keep=wrap?wrap.scrollTop:0,n=rows.length,w=want(S.type),m=mt(),col=THEMES[thIdx];
   var bl=S.blank[S.type];if(bl==null)bl=4;
-  var total=n+bl,h=[],i,j,cls,k,sm,cir,hid,st,row,bp;
+  var total=n+bl,h=[],i,j,cls,k,sm,cir,hid,st,row,bp,bk,bv,bi;
   if(!n){box.innerHTML='<div class="empty">还没有数据<br>点右上角「刷新」重新获取</div>';return}
   for(i=0;i<total;i++){
     bp=total-i;cls='row';if(bp%4==0&&i<total-1)cls+=' grp';
@@ -165,7 +184,15 @@ function render(toNew){
       }
       h.push('</div></div><div class="detail">第 '+esc(pl(row.q))+' 期 · '+esc(fd(row.d))+'</div></div>');
     }else{
-      h.push('<div class="'+cls+' blank" style="height:'+(m.rh-1)+'px"></div>');
+      bi=total-1-i;
+      h.push('<div class="'+cls+' blank"><div class="row-main"><span class="chev"></span><div class="nums">');
+      for(j=0;j<w;j++){
+        sm=(w==7&&j>=4);bk='b'+bi+'-'+j;bv=S.bv[bk]||'';
+        st='width:'+(sm?m.sw:m.bw)+'px;height:'+m.dh+'px;font-size:'+(sm?m.f2:m.f1)+'px;border-radius:'+(sm?Math.max(5,m.r-2):m.r)+'px;';
+        if(bv)st+='background:'+col[0]+';border-color:transparent;color:'+col[1]+';';
+        h.push('<span class="digit slot'+(bv?' filled':'')+'" data-b="'+bk+'" style="'+st+'">'+esc(bv)+'</span>');
+      }
+      h.push('</div></div></div>');
     }
   }
   box.innerHTML=h.join('');
@@ -196,13 +223,22 @@ function loadMarks(){try{var r=localStorage.getItem(mkey());if(!r)return;var o=J
 function saveMarks(){try{localStorage.setItem(mkey(),JSON.stringify({c:S.c,L:S.L,s:S.seq}))}catch(e){}}
 function loadHide(){try{S.hide=localStorage.getItem('qx_h1')=='1'}catch(e){S.hide=0}}
 function saveHide(){try{localStorage.setItem('qx_h1',S.hide?'1':'0')}catch(e){}}
+function loadLook(){
+  try{var a=+localStorage.getItem('qx_t1');if(a>=0&&a<THEMES.length)thIdx=a;
+      var b=+localStorage.getItem('qx_r1');if(b>=0&&b<RING.length)ringOff=b}catch(e){}
+}
+function saveLook(){try{localStorage.setItem('qx_t1',thIdx);localStorage.setItem('qx_r1',ringOff)}catch(e){}}
+function bvkey(){return 'qx_bv1_'+S.type}
+function loadBV(){try{var r=localStorage.getItem(bvkey());S.bv=r?JSON.parse(r):{}}catch(e){S.bv={}}}
+function saveBV(){try{localStorage.setItem(bvkey(),JSON.stringify(S.bv))}catch(e){}}
 function bmem(){try{var r=localStorage.getItem('qx_b1');return r?JSON.parse(r):{b:{},q:{}}}catch(e){return {b:{},q:{}}}}
 function bsave(m){try{localStorage.setItem('qx_b1',JSON.stringify(m))}catch(e){}}
 function initBlanks(){var m=bmem();S.blank.qxc=(m.b.qxc==null?4:m.b.qxc);S.blank.plw=(m.b.plw==null?4:m.b.plw)}
 function updBlanks(t,rows){
   if(!rows||!rows.length)return;
   var m=bmem(),b=(m.b[t]==null?4:m.b[t]),last=m.q[t],newest=rows[rows.length-1].q;
-  if(last&&+newest>+last){var add=0,i;for(i=rows.length-1;i>=0;i--){if(+rows[i].q>+last)add++;else break}b-=add;if(b<=1)b=4}
+  if(last&&+newest>+last){var add=0,i;for(i=rows.length-1;i>=0;i++){break}}
+  if(last&&+newest>+last){var ad=0,j;for(j=rows.length-1;j>=0;j++){if(j<0)break;if(+rows[j].q>+last)ad++;else break}b-=ad;if(b<=1)b=4}
   m.b[t]=b;m.q[t]=newest;bsave(m);S.blank[t]=b;log('· 空白期：'+b+' 期');
 }
 
@@ -222,6 +258,38 @@ function undo(){
 function applyRing(){
   for(var k in S.c){if(!S.c.hasOwnProperty(k))continue;var el=dEl(k);if(el){if(el.className.indexOf('circled')<0)el.className+=' circled';el.style.setProperty('--ring',ring())}}
   draw();
+}
+
+var padKey=null;
+function slotEl(k){try{return document.querySelector('[data-b="'+k+'"]')}catch(e){return null}}
+function setSlot(k,v){
+  S.bv[k]=v;saveBV();
+  var el=slotEl(k);if(!el)return;
+  el.textContent=v||'';
+  if(v){if(el.className.indexOf('filled')<0)el.className+=' filled';el.style.background=THEMES[thIdx][0];el.style.color=THEMES[thIdx][1];el.style.borderColor='transparent'}
+  else{el.className=el.className.replace(/ filled/g,'');el.style.background='';el.style.color='';el.style.borderColor=''}
+}
+function openPad(k){
+  padKey=k;
+  var all=qs('.slot');
+  for(var i=0;i<all.length;i++)all[i].className=all[i].className.replace(/ active/g,'');
+  var el=slotEl(k);if(!el)return;
+  el.className+=' active';
+  var p=k.split('-'),j=+p[1];
+  $('padTip').textContent='第 '+(j+1)+' 位（空白期）';
+  $('pad').className='pad show';
+}
+function closePad(){
+  padKey=null;$('pad').className='pad';
+  var all=qs('.slot');
+  for(var i=0;i<all.length;i++)all[i].className=all[i].className.replace(/ active/g,'');
+}
+function padDigit(d){
+  if(!padKey)return;
+  setSlot(padKey,d);
+  var p=padKey.split('-'),bi=p[0],j=+p[1],w=want(S.type);
+  if(j+1<w)openPad(bi+'-'+(j+1));
+  else{toast('这一行填好了');closePad()}
 }
 
 var press=null,lastTouch=0;
@@ -271,10 +339,15 @@ function bindTouch(){
   document.addEventListener('mousemove',function(e){if(press)moveP(e.clientX,e.clientY,e)});
   document.addEventListener('mouseup',function(e){if(press)endP(e.clientX,e.clientY)});
   box.addEventListener('click',function(e){
-    var c=upTo(e.target,'chev');if(!c)return;
-    var row=upTo(c,'row');if(!row)return;
-    if(row.className.indexOf('open')>=0)row.className=row.className.replace(' open','');
-    else row.className+=' open';
+    var c=upTo(e.target,'chev');
+    if(c){
+      var row=upTo(c,'row');if(!row)return;
+      if(row.className.indexOf('open')>=0)row.className=row.className.replace(' open','');
+      else row.className+=' open';
+      return;
+    }
+    var s=upTo(e.target,'slot');
+    if(s)openPad(s.getAttribute('data-b'));
   });
   document.addEventListener('contextmenu',function(e){if(upTo(e.target,'logbody'))return;e.preventDefault()});
 }
@@ -440,7 +513,7 @@ function loadData(force){
 var clearArmed=0,clearTm=null;
 function resetClear(){clearArmed=0;clearTimeout(clearTm);var b=$('bClear');if(b){b.className='chip';b.textContent='清除'}}
 function updateTabs(){
-  var ts=document.querySelectorAll('.tab');
+  var ts=qs('.tab');
   for(var i=0;i<ts.length;i++)ts[i].className=(ts[i].getAttribute('data-type')==S.type)?'tab active':'tab';
 }
 function updateHide(){var b=$('bHide');if(!b)return;b.className='chip'+(S.hide?' on':'');b.textContent=S.hide?'已隐藏':'隐藏'}
@@ -450,50 +523,7 @@ function refreshDots(){
 }
 function switchType(t){
   if(S.type==t)return;
-  saveMarks();S.type=t;S.c={};S.L=[];S.U=[];loadMarks();updateTabs();render(1);
-  if(!S.data[t].length)loadData(0);else setStatus(tn(t)+' · '+S.data[t].length+' 期');
-}
-function bindUI(){
-  var ts=document.querySelectorAll('.tab');
-  for(var i=0;i<ts.length;i++){
-    (function(b){b.addEventListener('click',function(){switchType(b.getAttribute('data-type'))},false)})(ts[i]);
-  }
-  on('bRefresh','click',function(){loadData(1)});
-  on('bColor','click',function(){thIdx=(thIdx+1)%THEMES.length;refreshDots();render(0);toast('数字颜色已更换')});
-  on('bRing','click',function(){ringOff=(ringOff+1)%RING.length;refreshDots();applyRing();toast('圈的颜色已更换')});
-  on('bLog','click',function(){$('logMask').className='show';var b=$('logBody');if(b)b.scrollTop=b.scrollHeight});
-  on('logClose','click',function(){$('logMask').className=''});
-  on('logCopy','click',function(){copyTxt(buf.join('\n'),'日志已复制')});
-  on('bFold','click',function(){var h=$('header'),o=h.className.indexOf('fold')<0;h.className=o?'fold':'';$('bFold').textContent=o?'▼':'▲';setTimeout(function(){render(0)},60)});
-  on('bMark','click',function(){
-    S.mark=S.mark?0:1;
-    var b=$('bMark');b.className='chip'+(S.mark?' on':'');b.textContent=S.mark?'标记中':'标记';
-    document.body.className=S.mark?'markmode':'';
-    toast(S.mark?'点数字加圈，长按数字拖到另一个号码上松手连线':'标记已关闭');
-  });
-  on('bUndo','click',undo);
-  on('bHide','click',function(){S.hide=S.hide?0:1;saveHide();updateHide();render(0);toast(S.hide?'已隐藏前 4 位之后的号码':'已显示全部号码')});
-  on('bClear','click',function(){
-    var b=$('bClear');
-    if(!clearArmed){clearArmed=1;b.className='chip warn';b.textContent='确认清除';clearTm=setTimeout(resetClear,2600);return}
-    resetClear();S.c={};S.L=[];S.U=[];render(0);saveMarks();toast('已清除全部标记');
-  });
-  var rz=null;
-  window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){render(0)},150)},false);
-  window.addEventListener('orientationchange',function(){setTimeout(function(){render(0)},350)},false);
-}
-
-function init(){
-  initBlanks();loadMarks();loadHide();
-  bindUI();bindTouch();refreshDots();updateHide();render(0);updateTabs();
-  window.__boot=1;
-  log('=== 启动 v5 '+now()+' ===');
-  log('渲染完成：'+S.data[S.type].length+' 期');
-  setTimeout(function(){draw()},50);
-  loadData(0);
-}
-init();
-})();
-</script>
-</body>
-</html>
+  saveMarks();saveBV();closePad();
+  S.type=t;S.c={};S.L=[];S.U=[];
+  loadMarks();loadBV();updateTabs();render(1);
+  if(!S.data[t].length)loadData(0);else setStatus(tn(t)+' · '+S.data[t].length+' 
