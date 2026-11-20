@@ -1,11 +1,6 @@
 {
- "updated": "2026-11-19T15:34:05.114Z",
+ "updated": "2026-11-20T14:14:22.481Z",
  "qxc": [
-  {
-   "expect": "26103",
-   "opendate": "",
-   "opencode": "0 0 0 6 0 2 8"
-  },
   {
    "expect": "26104",
    "opendate": "",
@@ -150,14 +145,14 @@
    "expect": "26132",
    "opendate": "",
    "opencode": "0 0 7 0 4 2 7"
+  },
+  {
+   "expect": "26133",
+   "opendate": "",
+   "opencode": "6 2 1 8 9 2 5"
   }
  ],
  "plw": [
-  {
-   "expect": "26280",
-   "opendate": "",
-   "opencode": "8 6 4 0 3"
-  },
   {
    "expect": "26281",
    "opendate": "",
@@ -302,6 +297,11 @@
    "expect": "26309",
    "opendate": "",
    "opencode": "0 3 3 0 9"
+  },
+  {
+   "expect": "26310",
+   "opendate": "",
+   "opencode": "1 6 2 6 9"
   }
  ]
 }
