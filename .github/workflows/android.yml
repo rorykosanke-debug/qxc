@@ -73,20 +73,12 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: 配置 Maven 镜像（解决下载失败）
+      - name: 配置 Maven 镜像
         run: |
           mkdir -p ~/.gradle
           cat > ~/.gradle/init.gradle <<'EOF'
           allprojects {
               repositories {
-                  maven { url 'https://maven.aliyun.com/repository/google' }
-                  maven { url 'https://maven.aliyun.com/repository/public' }
-                  google()
-                  mavenCentral()
-              }
-          }
-          settingsEvaluated { s ->
-              s.pluginManagement.repositories {
                   maven { url 'https://maven.aliyun.com/repository/google' }
                   maven { url 'https://maven.aliyun.com/repository/public' }
                   google()
@@ -120,12 +112,14 @@ jobs:
         with:
           name: kai-jiang-apk
           path: out/*.apk
+          retention-days: 30
 
       - name: 发布到 Releases
-        uses: actions/action-gh-release@v2
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
           name: 开奖号码 v${{ github.run_number }}
           files: out/*.apk
           body: |
             自动打包 · 提交 ${{ github.sha }}
+            安装：下载 kai-jiang-v${{ github.run_number }}.apk 覆盖安装
