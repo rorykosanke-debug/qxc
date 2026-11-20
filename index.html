@@ -95,7 +95,7 @@ body.markmode .digit{touch-action:none}
       <button id="bClear" class="chip">清除</button>
       <button id="bHide" class="chip">隐藏</button>
     </div>
-    <div id="meta" class="meta">v8 · 准备中…</div>
+    <div id="meta" class="meta">v9 · 准备中…</div>
   </header>
   <main id="listWrap"><div id="listInner">
     <svg id="lineLayer"><g id="linesG"></g><line id="tempLine" style="display:none"></line></svg>
@@ -269,31 +269,19 @@ while((m=re.exec(txt))){open=m[0];tag=m[1];self=/\/\s*>$/.test(open);inner='';
  nr=numsOf(pick(at,['opencode','opennum','nums','numbers','number','num','result','code','value']));
  if(!nr||nr.length!=w)continue;var qq=q.replace(/[^0-9]/g,'');if(!qq)continue;out.push({q:qq,d:d,n:nr})}
 return out}
-function looksDate(s){return /(\d{4})[-\/年.]\d{1,2}[-\/月.]\d{1,2}/.test(s)}
-function dArr(v){if(!v||v.length===undefined||(v.length!=5&&v.length!=7))return null;var o=[],i,s;
-for(i=0;i<v.length;i++){s=String(v[i]).replace(/[^0-9]/g,'');if(!s)return null;o.push(s.charAt(s.length-1))}return o}
-function fromObj(o){var ks=[],k,i,j,v,nr=null,q='',d='';for(k in o)if(o.hasOwnProperty(k))ks.push(k);
-var NK=['opencode','opennum','opennums','nums','numbers','number','num','n','balls','ball','result','results','digits','winning','value','values','code'],
-QK=['expect','issue','qihao','qishu','term','period','stage','q','qi','no'],
-DK=['opendate','openday','opentime','date','day','time','drawdate','d'];
-for(i=0;i<NK.length&&!nr;i++)for(j=0;j<ks.length&&!nr;j++){if(ks[j].toLowerCase()==NK[i]){v=o[ks[j]];nr=dArr(v)||((typeof v=='string'||typeof v=='number')?numsOf(v):null)}}
-if(!nr)for(j=0;j<ks.length&&!nr;j++)nr=dArr(o[ks[j]]);
-if(!nr)return null;
-for(i=0;i<QK.length&&!q;i++)for(j=0;j<ks.length&&!q;j++){if(ks[j].toLowerCase()==QK[i]){var s=String(o[ks[j]]).replace(/[^0-9]/g,'');if(s.length>=5)q=s}}
-if(!q)for(j=0;j<ks.length&&!q;j++){v=o[ks[j]];var g=String(v).replace(/[^0-9]/g,'');if(g.length>=5&&g.length<=11&&!looksDate(String(v))&&g!==nr.join(''))q=g}
-for(i=0;i<DK.length&&!d;i++)for(j=0;j<ks.length&&!d;j++){if(ks[j].toLowerCase()==DK[i]&&o[ks[j]]!=null)d=String(o[ks[j]])}
-if(!q)return null;return {q:q,d:d,n:nr}}
-function scan(o,dep,out){if(!o||typeof o!='object'||dep>8)return;
-if(Object.prototype.toString.call(o)=='[object Array]'){for(var i=0;i<o.length&&i<500;i++)scan(o[i],dep+1,out);return}
-var ks=[],k,i,isMap=true;for(k in o)if(o.hasOwnProperty(k))ks.push(k);
-for(i=0;i<ks.length;i++){if(!/^\d{5,11}$/.test(ks[i])){isMap=false;break}}
-if(isMap&&ks.length){for(i=0;i<ks.length;i++){var ch=o[ks[i]];if(!ch||typeof ch!='object')continue;
- var r0=fromObj(ch);if(r0){r0.q=ks[i];out.push(r0);continue}var n0=dArr(ch);if(n0)out.push({q:ks[i],d:'',n:n0})}return}
-var r=fromObj(o);if(r)out.push(r);
-for(i=0;i<ks.length;i++){var c=o[ks[i]];if(c&&typeof c=='object')scan(c,dep+1,out)}}
 function fin(rows){var m={},out=[],k,i;for(i=0;i<rows.length;i++){var r=rows[i];if(r&&r.q&&r.n&&r.n.length)m[r.q]=r}
 for(k in m)if(m.hasOwnProperty(k))out.push(m[k]);out.sort(function(a,b){return a.q*1-b.q*1});
 if(out.length>30)out=out.slice(out.length-30);return out}
+function parseJson(x){var j=JSON.parse(x),o={qxc:[],plw:[]},t,i,list,row,nn,n;
+for(t in j){if(!j.hasOwnProperty(t))continue;if(t!='qxc'&&t!='plw')continue;
+ list=j[t];if(!list||!list.length)continue;
+ for(i=0;i<list.length;i++){row=list[i];if(!row||typeof row!='object')continue;
+  nn=row.opencode;if(nn==null)nn=row.opennum;if(nn==null)nn=row.n;if(nn==null)nn=row.nums;
+  n=numsOf(nn);if(!n)continue;
+  o[t].push({q:String(row.expect!=null?row.expect:(row.issue!=null?row.issue:'')).replace(/[^0-9]/g,''),d:String(row.opendate!=null?row.opendate:(row.date!=null?row.date:'')),n:n})}}
+if(!o.qxc.length&&!o.plw.length){var ks=[],k;for(k in j)if(j.hasOwnProperty(k))ks.push(k);
+ log('  · JSON 里没有 qxc/plw 数据，顶层字段：'+ks.slice(0,8).join(','))}
+return {qxc:fin(o.qxc),plw:fin(o.plw)}}
 function loadDirect(t){var urls=(t=='plw')?XP:XQ,w=(t=='plw')?5:7,i=0;
 function next(){if(i>=urls.length)return Promise.reject(new Error('无数据'));
  var u=urls[i++];log('直连 '+tn(t)+' → '+u);
@@ -301,11 +289,9 @@ function next(){if(i>=urls.length)return Promise.reject(new Error('无数据'));
   if(!r.length){log('  · 解析 0 期｜'+String(x).replace(/\s+/g,' ').substr(0,100));return next()}
   log('  ✓ 解析 '+r.length+' 期');return r}).catch(function(e){log('  · 失败：'+(e.message||e));return next()})}
 return next()}
-function loadJson(u){log('读取 '+u);return getTxt(u).then(function(x){var j;
-try{j=JSON.parse(x)}catch(e){throw new Error('不是有效 JSON')}
-var hits=[];scan(j,0,hits);var a=[],b=[],i;
-for(i=0;i<hits.length;i++){if(hits[i].n.length==7)a.push(hits[i]);else if(hits[i].n.length==5)b.push(hits[i])}
-log('  · 七星彩 '+a.length+' 条 / 排列五 '+b.length+' 条');return {qxc:fin(a),plw:fin(b)}})}
+function loadJson(u){log('读取 '+u);return getTxt(u).then(function(x){
+var r;try{r=parseJson(x)}catch(e){throw new Error('不是有效 JSON')}
+log('  · 七星彩 '+r.qxc.length+' 条 / 排列五 '+r.plw.length+' 条');return r})}
 function rdCache(t){try{var r=ls('qx_d1');if(!r)return null;var o=JSON.parse(r);if(!o||!o[t]||!o[t].length)return null;return {t:o.t||0,rows:o[t]}}catch(e){return null}}
 function wrCache(){ls('qx_d1',JSON.stringify({t:Date.now(),qxc:S.data.qxc,plw:S.data.plw}))}
 function loadData(force){if(S.busy)return;var t=S.type;S.busy=1;setSt('获取中…');
@@ -353,4 +339,15 @@ if(!clearArmed){clearArmed=1;b.className='chip warn';b.textContent='确认清除
 resetClear();S.c={};S.L=[];S.U=[];render(0);saveMarks();toast('已清除全部标记')});
 on('padClose','click',closePad);
 on('padClear','click',function(){if(padKey)setSlot(padKey,'')});
-var pb=$('padBox');if(pb)pb.addEventListener('click',function(e){var b=upTo(e.target,'k
+var pb=$('padBox');if(pb)pb.addEventListener('click',function(e){var b=upTo(e.target,'k');if(b)padDigit(b.getAttribute('data-d'))});
+var rz=null;
+window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){render(0)},150)},false);
+window.addEventListener('orientationchange',function(){setTimeout(function(){render(0)},350)},false)}
+function init(){loadAll();loadMarks();loadBV();bindUI();bindTouch();dots();updHide();render(0);updTabs();
+window.__boot=1;log('=== 启动 v9 '+clk()+' ===');log('渲染完成：'+S.data[S.type].length+' 期');
+setTimeout(draw,50);loadData(0)}
+init();
+})();
+</script>
+</body>
+</html>
