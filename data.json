@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-22T15:24:41.028Z",
+ "updated": "2026-11-23T14:22:50.401Z",
  "qxc": [
   {
    "expect": "26105",
@@ -154,11 +154,6 @@
  ],
  "plw": [
   {
-   "expect": "26283",
-   "opendate": "",
-   "opencode": "2 5 8 4 5"
-  },
-  {
    "expect": "26284",
    "opendate": "",
    "opencode": "6 7 7 2 6"
@@ -302,6 +297,11 @@
    "expect": "26312",
    "opendate": "",
    "opencode": "7 7 1 4 4"
+  },
+  {
+   "expect": "26313",
+   "opendate": "",
+   "opencode": "0 3 6 6 7"
   }
  ]
 }
